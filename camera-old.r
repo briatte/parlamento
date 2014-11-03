@@ -1,3 +1,4 @@
+# parse MPs, legislatures 16-17
 
 cam = "data/camera.csv"
 if(!file.exists(cam)) {
@@ -104,17 +105,15 @@ if(!file.exists(cam)) {
     
   }
   
-  # pages that failed to scrape )n = 2)
+  # pages that failed to scrape (n = 2)
   
   cat(length(diff), "MPs failed to scrape\n")
   
-  # finalize dataset
-  
-  str(q)
+  # clean up names
   q$name = gsub("( )?\\((non in carica|deceduto|fino al (.*))\\)", "", q$name)
   # subset(q, grepl("\\(", name))
   
-  # legislature
+  # party (done again later in more detail)
   
   q$party[ q$party == "ALLEANZA NAZIONALE" ] = "Alleanza Nazionale"
   q$party[ q$party == "DEMOCRATICI DI SINISTRA-L'ULIVO" ] = "Democratici di Sinistra - L'Ulivo"
@@ -137,35 +136,41 @@ if(!file.exists(cam)) {
   q$photo[ q$legislature == "15" ] = paste0("http://legxv.camera.it",
                                             q$photo[ q$legislature == "15" ])
   
-  # remove two perfect duplicates
-  # q = unique(q)
-  
-  # download photos (run a couple of times to solve network errors)
-  
   q$photo_url = q$photo
-  for(i in unique(q$photo_url)) {
-    
-    j = paste(q$legislature[ q$photo_url == i ], q$name[ q$photo_url == i ])
-    j = paste0("photos_ca/", gsub("(_)+", "_", gsub("\\s|'", "_", tolower(j))), ".jpg")
-    
-    if(!file.exists(j))
-      download.file(i, j, mode = "wb", quiet = TRUE)
-    
-    if(file.info(j)$size)
-      q$photo[ q$photo_url == i ] = j
-    else {
-      q$photo[ q$photo_url == i ] = NA
-      file.remove(j)
-    }
-    
-  }
   
   write.csv(q, cam, row.names = FALSE)
   
 }
 
 q = read.csv(cam, stringsAsFactors = FALSE)
+
+# useless addition to match senator dataset (ignored afterwards)
 q$party_url = NA
+
+# download photos (run a couple of times to solve network errors)
+
+for(i in unique(q$photo_url[ grepl("^http", q$photo) ])) {
+  
+  j = paste(q$legislature[ q$photo_url == i ], q$name[ q$photo_url == i ])
+  j = paste0("photos_ca/", gsub("(_)+", "_", gsub("\\s|'", "_", tolower(j))), ".jpg")
+  j = gsub("_\\.", ".", j)
+  
+  if(!file.exists(j))
+    try(download.file(i, j, mode = "wb", quiet = TRUE), silent = TRUE)
+  
+  if(file.info(j)$size)
+    q$photo[ q$photo_url == i ] = j
+  else {
+    q$photo[ q$photo_url == i ] = NA
+    file.remove(j)
+  }
+  
+}
+
+# buggy profile (leave after photo loop)
+q$name[ grepl("ZAPPIA Leone Pietro Antonio", q$url) ] = "ZAPPIA Leone Pietro Antonio"
+q$photo[ grepl("ZAPPIA Leone Pietro Antonio", q$url) ] = NA
+q$photo_url[ grepl("ZAPPIA Leone Pietro Antonio", q$url) ] = NA
 
 q$uid = NA
 q$uid[ q$legislature == "13" ] = gsub("(.*)(id=)(d)(.*)", "\\3\\4", q$url[ q$legislature == "13" ])
@@ -207,4 +212,23 @@ dep$party[ grepl("^MISTO|^DCA(.*)PSI$", dep$party, ignore.case = TRUE) ] = "Mist
 # number of groups per legislature
 # tapply(dep$party, gsub("(.*)leg=(\\d+)(.*)", "\\2", dep$url), dplyr::n_distinct)
 
-write.csv(dep, "data/deputati.csv", row.names = FALSE)
+# remove unused photos (if you need to reduce the size of the photos_ca folder)
+q$photo = gsub("_\\.", ".", q$photo) # fix little bug
+file.remove(q$photo[ !q$photo %in% dep$photo ])
+
+# fix order and particles in MP names
+dep$name = gsub("d'\\s", "D'", dep$name)
+dep$name = gsub("di\\s", "DI ", dep$name)
+dep$name = gsub("de\\s", "DE ", dep$name)
+dep$name = sapply(dep$name, function(i) {
+  j = unlist(strsplit(i, " "))
+  k = c()
+  for(jj in j) {
+    if(!grepl("[a-z]", jj))
+      k = c(k, jj)
+  }
+  j = j[ !j %in% k ]
+  return(paste(paste0(j, collapse = " "), paste0(k, collapse = " ")))
+})
+
+write.csv(dep[, c("url", "name", "sex", "born", "party", "photo") ], "data/deputati-old.csv", row.names = FALSE)

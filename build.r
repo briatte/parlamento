@@ -1,15 +1,30 @@
 # reload and complete bills dataset
 
 b = read.csv(bills, stringsAsFactors = FALSE)
-b$all = str_join(b$prima, b$cofirm, sep = ";")
-b$n_a = str_count(b$all, ";")
+b = subset(b, !is.na(prima))
+
+# check all sponsors are recognized
+a = na.omit(unique(c(unlist(strsplit(b$prima, ";")), unlist(strsplit(b$cofirm, ";")))))
+table(a %in% c(sen$url, dep$url, p$url)) # should be below 10
+
+# sponsors that failed to scrape
+buggy = a[ !a %in% c(sen$url, dep$url, p$url) ]
+buggy = buggy[ !grepl("id=(;|$)", buggy) ] # only a handful of cases
+buggy = subset(b, grepl("id=(;|$)", prima) | grepl("id=(;|$)", cofirm))
+nrow(buggy) / nrow(b[ !is.na(b$prima), ]) # number of bills with issues < 2%
+
+b$n_a = b$n_au + b$n_co
+
+write.csv(rbind(read.csv("data/deputati-old.csv", stringsAsFactors = FALSE),
+                read.csv("data/deputati-new.csv", stringsAsFactors = FALSE)),
+          "data/deputati.csv", row.names = FALSE)
 
 # loop over chambers and legislatures
 for(jj in c("ca", "se")) {
   
   if(jj == "ca") {
 
-    a = subset(b, grepl("CAM\\.DEP", prima) & !grepl("&leg=1(6|7)", prima) & sample) # Camera 13-15
+    a = subset(b, grepl("CAM\\.DEP", prima) & sample) # Camera 13-17
     s = "deputati"
     
   } else {
@@ -24,19 +39,25 @@ for(jj in c("ca", "se")) {
   for(ii in unique(a$legislature)) {
     
     cat(jj, ii)
-    data = subset(a, legislature == ii)
+    data = subset(a, legislature == ii & n_a > 1)
     sp = subset(s, grepl(paste0("leg=", ii), url))
     
     cat(":", nrow(data), "cosponsored bills, ")
     
-    ## why unique???
     edges = rbind.fill(lapply((1:nrow(data)), function(i) {
       
+      # first authors
       w = unlist(strsplit(data$prima[ i ], ";"))
-      d = s$name[ s$url %in% w ]
+      d = s$name[ s$url %in% w ] # eliminates buggy URLs
       
+      # cosponsors
       v = unlist(strsplit(data$cofirm[ i ], ";"))
-      e = s$name[ s$url %in% v ]
+      v = v[ !v %in% w ] # remove redundant first authors
+      e = s$name[ s$url %in% v ] # eliminates buggy URLs
+
+      if(length(c(d, e)) != length(unique(c(d, e)))) {
+        cat("\nERROR: redundant sponsor(s) on", data$url[ i ], "\n")
+      }
       
       # first authors connected to each other, and then to cosponsors
       d = subset(rbind(expand.grid(d, d, stringsAsFactors = FALSE),
@@ -155,7 +176,7 @@ for(jj in c("ca", "se")) {
     # print(table(n %v% "party", exclude = NULL))
     
     # number of bills cosponsored
-    nb = unlist(strsplit(data$all, ";"))
+    nb = c( unlist(strsplit(data$prima, ";")), unlist(strsplit(data$cofirm, ";")) )
     nb = sapply(n %v% "url", function(x) {
       sum(nb == x) # ids are unique URLs
     })

@@ -108,8 +108,10 @@ sen$party[ sen$party == "PI" ] = "Per l'Italia" # coalition
 sen$party[ sen$party == "GAL" ] = "Grandi Autonomie e Libertà" # coalition
 sen$party[ sen$party == "Insieme con l'Unione Verdi - Comunisti Italiani" ] = "Verdi e Communisti" # coalition
 sen$party[ grepl("FI-PdL XVII|Popolo della Libertà", sen$party) ] = "Forza Italia" # new version of Forza Italia (2013)
-# resilduals: regionalists, Third Pole, Scelta Civica (Monti); n < 10 for each
-sen$party[ grepl("Aut |UDC, SVP e Autonomie|Per il Terzo Polo|Per le Autonomie|SCpI", sen$party) ] = "Misto"
+# Monti (small in Senate but not in Chamber)
+sen$party[ sen$party == "SCpI" ] = "Scelta Civica con Monti"
+# residuals: regionalists, Third Pole; n < 10 for each
+sen$party[ grepl("Aut |UDC, SVP e Autonomie|Per il Terzo Polo|Per le Autonomie", sen$party) ] = "Misto"
 
 # print(table(sen$party, gsub("(.*)leg=(\\d+)(.*)", "\\2", sen$url), exclude = NULL))
 

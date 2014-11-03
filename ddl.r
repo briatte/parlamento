@@ -2,8 +2,8 @@
 
 # NOTE - the code does not update the current legislature past the date of the
 # first scrape, but that should not be too complicated to implement if needed.
-# Running on 2014-10-23 returned 4,005 bills for the current legislature (17),
-# and 37,368 bills in total (legislatures 13-17).
+# Running on 2014-11-02 returned 4,025 bills for the current legislature (17),
+# between 5,000 and 10,000 bills for legislatures 13-16, 37,388 bills in total.
 
 if(!file.exists(bills)) {
   
@@ -31,11 +31,11 @@ if(!file.exists(bills)) {
     }
     
   }
+
+  # bills metadata
+  b$ref = b$date = b$teseo = b$title = b$prima = b$cofirm = NA
   
-  b$prima = NA
-  b$cofirm = NA
-  
-  # used to discriminate between cosponsors and merged bills initiators
+  # used to further discriminate between cosponsors and merged bill authors
   # e.g. http://www.senato.it/leg/13/BGT/Schede/Ddliter/13229.htm
   #   or http://www.senato.it/leg/17/BGT/Schede/Ddliter/39637.htm
   b$cofirm_dummy = NA
@@ -54,7 +54,7 @@ b = subset(b, !grepl("id=(19902|18800|18870|18686)", url))
 
 # parse missing pages
 
-j = b$url[ is.na(b$prima) ]
+j = sample(b$url[ is.na(b$prima) ], 5)
 for(i in rev(j)) {
   
   cat(sprintf("%4.0f", which(j == i)), str_pad(i, 47, "right"))
@@ -67,9 +67,14 @@ for(i in rev(j)) {
       
       ref = xpathSApply(h, "//div[@id='content']//h1", xmlValue)
       title = scrubber(xpathSApply(h, "//div[@class='boxTitolo']", xmlValue))
-      date = scrubber(xpathSApply(h, "//table[@id='tabellaIter']/tr/td[3]/strong", xmlValue))
       
-      prima = xpathSApply(h, "//div[@class='testoMedium']/a/@href")
+      # date is the last legislative status, not introduction date
+      date = scrubber(xpathSApply(h, "//div[@class='bordoNero']/table/tr/td[3]/strong", xmlValue))
+      kw = scrubber(xpathSApply(h, "//h2[text()='Classificazione TESEO']/following-sibling::p[1]", xmlValue))
+      
+      # first authors are located in the first div
+      # authors of related legislation are located in the second div
+      prima = xpathSApply(h, "//div[@class='testoMedium'][1]/a/@href")
       cofirm = xpathSApply(h, "//div[@class='testoSmall']/a/@href")
       
       cofirm01 = xpathSApply(h, "//div[@id='div1Top']/span/strong/a", xmlValue)
@@ -79,7 +84,10 @@ for(i in rev(j)) {
       cat(":", sprintf("%3.0f", length(prima)), "author(s)",
           sprintf("%3.0f", length(cofirm)), "cosponsor(s)\n")
       
-      ## ADD REF, TITLE, DATE
+      b$ref[ b$url == i ] = ref
+      b$title[ b$url == i ] = title
+      b$date[ b$url == i ] = date
+      b$teseo[ b$url == i ] = ifelse(length(kw), kw, NA)
       b$prima[ b$url == i ] = paste0(prima, collapse = ";")
       b$cofirm[ b$url == i ] = ifelse(is.null(cofirm), NA, paste0(cofirm, collapse = ";"))
       b$cofirm_dummy[ b$url == i ] = cofirm01
@@ -108,11 +116,15 @@ cat("\n", sum(!is.na(b$prima)), "bills parsed",
 
 b$n_au = 1 + str_count(b$prima, ";")
 b$n_au[ is.na(b$prima) ] = 0
+table(b$n_au, exclude = NULL)
 
 b$n_co = 1 + str_count(b$cofirm, ";")
 b$n_co[ is.na(b$cofirm) ] = 0
+table(b$n_co, exclude = NULL)
 
-# less than 1% of bills are ambiguous regarding cosponsors: (2723 + 166) / nrow(b)
+table(b$n_au + b$n_co, exclude = NULL)
+
+# less than 1% of bills are ambiguous regarding cosponsors: (35 + 0) / nrow(b)
 # all others are either single-authored (FALSE/0 cell), or cosponsored (TRUE/1 cell)
 table(b$n_au + b$n_co > 1, b$cofirm_dummy, exclude = NULL)
 
@@ -128,14 +140,17 @@ table(b$chamber_dummy, exclude = NULL)
 b$notgov_dummy = 1
 b[ grepl("COMPGOV", b$prima), "notgov_dummy" ] = 0  # n = 107
 b[ grepl("COMPGOV", b$cofirm), "notgov_dummy" ] = 0 # n = 0
+table(b$notgov_dummy, exclude = NULL)
 
-# parliamentary-only bills, sponsored in a single chamber, where cosponsors are 'cofirmari'
+# parliamentary-only bills, sponsored in a single chamber, where cosponsors are 'cofirmatari'
 b$sample = b$chamber_dummy & b$cofirm_dummy & b$notgov_dummy
 table(b$sample, exclude = NULL)
 
-# sample: cosponsored bills where all three dummies are true
-table(b$n_au + b$n_co > 1 & b$sample, b$legislature, exclude = NULL)
-b$sample = b$sample & (b$n_au + b$n_co > 1)
+# final sample: cosponsored bills where all three dummies are true
+table((b$n_au + b$n_co > 1) & b$sample, b$legislature, exclude = NULL)
+
+# leave commented out to count percentage of cosponsored bills later
+# b$sample = b$sample & (b$n_au + b$n_co > 1)
 
 # proportion of bills cosponsored in each legislature (50-70%)
 prop.table(table(b$n_au + b$n_co > 1 & b$sample, b$legislature), 2)
