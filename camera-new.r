@@ -55,7 +55,7 @@ for(i in rev(v$file)) {
     
     born = xpathSApply(h, "//div[@class='datibiografici']", xmlValue)
         
-    sex = ifelse(grepl("Nata", born), "F", "M")
+    sex = ifelse(grepl("Nat", born), ifelse(grepl("Nata ", born), "F", "M"), NA)
     born = str_extract(born, "[0-9]{4}")
     
     # party_url = xpathSApply(h, "//div[@id='innerContentColumn']//a[contains(@href, 'Gruppo')]/@href")

@@ -38,7 +38,7 @@ for(jj in c("ca", "se")) {
     
   for(ii in unique(a$legislature)) {
     
-    cat(jj, ii)
+    cat("\n", jj, ii)
     data = subset(a, legislature == ii & n_a > 1)
     sp = subset(s, grepl(paste0("leg=", ii), url))
     
@@ -262,12 +262,12 @@ for(jj in c("ca", "se")) {
                  output = paste0("net_it_", jj, ii, ".gexf"))
       
     }
-    
-    save(list = ls(pattern = "^(net|edges|bills)_it_(ca|se)\\d{2}$"),
-         file = "data/net_it.rda")
-    
+        
   }
-  
+    
 }
+
+save(list = ls(pattern = "^(net|edges|bills)_it_(ca|se)\\d{2}$"),
+     file = "data/net_it.rda")
 
 # kthxbye

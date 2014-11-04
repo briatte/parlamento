@@ -47,7 +47,7 @@ if(length(k)) {
       born = unlist(str_split(born, "\\n"))
       born = born[ grepl("Nat(o|a)", born) ]
       
-      sex = ifelse(grepl("Nata", born), "F", "M")
+      sex = ifelse(grepl("Nat", born), ifelse(grepl("Nata ", born), "F", "M"), NA)
       born = as.numeric(str_extract(born, "[0-9]{4}"))
       
       s[ s$id == i, ] = c(i, name, sex, born, party, party_url, photo)

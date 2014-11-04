@@ -54,7 +54,7 @@ b = subset(b, !grepl("id=(19902|18800|18870|18686)", url))
 
 # parse missing pages
 
-j = sample(b$url[ is.na(b$prima) ], 5)
+j = sample(b$url[ is.na(b$prima) ], 1000)
 for(i in rev(j)) {
   
   cat(sprintf("%4.0f", which(j == i)), str_pad(i, 47, "right"))

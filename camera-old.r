@@ -1,6 +1,6 @@
 # parse MPs, legislatures 16-17
 
-cam = "data/camera.csv"
+cam = "data/camera-old.csv"
 if(!file.exists(cam)) {
   
   q = data.frame()
@@ -40,17 +40,29 @@ if(!file.exists(cam)) {
         
         # add URL
         t$url = paste0(leg, xpathSApply(f, "//table//tr/td[1]/a/@href"))
-        
-        ## t = t[ !t[, 3] %in% r, ]
-        
+                
         cat(":", sprintf("%3.0f", nrow(t)), "MPs\n")
         
         p = data.frame()
         
         for(i in rev(t$url)) {
+                    
+          # legislature number
+          h = str_extract(i, "13|xiv|xv")
+          h[ h == "xiv" ] = 14
+          h[ h == "xv" ] = 15
+          h = paste0("raw/", h, gsub("(id|deputato)=", "_", str_extract(i, "(id|deputato)=(d)?(\\d+)")), ".html")
           
-          # cat(str_pad(str_extract(leg, "13|xiv|xv"), 4, "right"), which(t[, 3] == i))
-          h = try(htmlParse(gsub("\\s", "%20", i)), silent = TRUE)
+          if(!file.exists(h))
+            try(download.file(gsub("\\s", "%20", i), h, quiet = TRUE, mode = "wb"), silent = TRUE)
+          
+          if(!file.info(h)$size)
+            file.remove(h)
+          
+          hh = h
+
+          ## cat("\nParsing", h)
+          h = try(htmlParse(h), silent = TRUE)
           
           if(!"try-error" %in% class(h)) {
             
@@ -61,20 +73,25 @@ if(!file.exists(cam)) {
             
             born = xpathSApply(h, "//div[@id='innerContentColumn']//p[2]", xmlValue)
             
+            # fix leg. XIV
+            if(grepl("xiv", i))
+              born = xpathSApply(h, "//div[@id='schedaDepDatiPers']", xmlValue)
+
             # fix leg. XIII
-            if(!length(born))
+            if(!length(born)) {
               born = xpathSApply(h, "//div[@id='innerContentColumn']//div[2]", xmlValue)
+              born = str_extract(born, "Nat(o|a)(.*)(\\d{4})")
+            }
             
-            sex = ifelse(grepl("Nata", born), "F", "M")
+            sex = ifelse(grepl("Nat", born), ifelse(grepl("Nata ", born), "F", "M"), NA)
             born = str_extract(born, "[0-9]{4}")
             
             # party_url = xpathSApply(h, "//div[@id='innerContentColumn']//a[contains(@href, 'Gruppo')]/@href")
             # party = xpathSApply(h, "//div[@id='innerContentColumn']//a[contains(@href, 'Gruppo')]", xmlValue)
             
-            if(length(born)) {
+            if(length(born) > 0) {
               
-              # cat(":", t[ which(t[, 3] == i), 1], "\n")
-              
+              ## cat(":", born, t$name[ which(t$url == i) ])
               p = rbind(p, data.frame(
                 name =  t$name[ which(t$url == i) ],
                 party = t$party[ which(t$url == i) ],
@@ -84,7 +101,6 @@ if(!file.exists(cam)) {
             } else {
               
               # a few pages are written in Frontpage-style HTML code
-              # cat(":", t[ which(t[, 3] == i), 1], "failed (different code)\n")
               diff = c(diff, i)
               
             }
@@ -104,21 +120,15 @@ if(!file.exists(cam)) {
     }
     
   }
-  
-  # pages that failed to scrape (n = 2)
+
+  # pages that failed to scrape
+  # two pages from l. 13 are coded completely differently and a few others are empty
   
   cat(length(diff), "MPs failed to scrape\n")
   
   # clean up names
   q$name = gsub("( )?\\((non in carica|deceduto|fino al (.*))\\)", "", q$name)
-  # subset(q, grepl("\\(", name))
-  
-  # party (done again later in more detail)
-  
-  q$party[ q$party == "ALLEANZA NAZIONALE" ] = "Alleanza Nazionale"
-  q$party[ q$party == "DEMOCRATICI DI SINISTRA-L'ULIVO" ] = "Democratici di Sinistra - L'Ulivo"
-  q$party[ q$party == "MISTO" ] = "Misto"
-  q$party[ q$party == "LEGA NORD PADANIA" ] = "Lega Nord Padania"
+  subset(q, grepl("\\(", name))
   
   # legislature
   
@@ -143,6 +153,22 @@ if(!file.exists(cam)) {
 }
 
 q = read.csv(cam, stringsAsFactors = FALSE)
+
+# add the two missing sponsors
+q = rbind(q, data.frame(
+  name = c("VALENSISE Raffaele", "TATARELLA Giuseppe"),
+  party = c("Alleanza Nazionale", "Alleanza Nazionale"),
+  url = c("http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/valera01.asp", 
+          "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/d00583.asp"),
+  sex = c("M", "M"),
+  born = c("1921", "1935"),
+  photo = c("http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/VALERA01.jpg",
+            "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/22120.jpg"),
+  legislature = c(13, 13),
+  photo_url = c(
+    "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/VALERA01.jpg",
+    "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/22120.jpg"
+  ), stringsAsFactors = FALSE))
 
 # useless addition to match senator dataset (ignored afterwards)
 q$party_url = NA
@@ -193,6 +219,8 @@ names(dep)[ which(names(dep) == "id") ] = "url"
 cat(sum(s$id %in% dep$url), "identified MPs", sum(!s$id %in% dep$url), "missing\n")
 
 dep$party_full = dep$party # back up full party name
+dep$party[ dep$party == "ALLEANZA NAZIONALE" ] = "Alleanza Nazionale"
+dep$party[ dep$party %in% c("", "MISTO") ] = "Misto"
 dep$party[ dep$party == "" ] = "Misto"
 dep$party[ dep$party == "FORZA ITALIA" ] = "Forza Italia"
 dep$party[ dep$party == "ITALIA DEI VALORI" ] = "Italia dei Valori"
@@ -200,12 +228,13 @@ dep$party[ grepl("POPOLARI|UDEUR|Unione Democratici per l'Europa", dep$party, ig
 dep$party[ grepl("COMUNISTI ITALIANI", dep$party, ignore.case = TRUE) ] = "P. Comunisti Italiani" # incl. Misto (PCI)
 dep$party[ dep$party == "SOCIALISTI E RADICALI-RNP" ] = "Socialisti e Radicali" # coalition
 dep$party[ dep$party == "VERDI" ] = "Verdi" # Federazione dei Verdi
-dep$party[ grepl("Lega Nord", dep$party, ignore.case = TRUE) ] = "Lega Nord"
+dep$party[ grepl("LEGA NORD", dep$party, ignore.case = TRUE) ] = "Lega Nord"
 dep$party[ grepl("L'ULIVO", dep$party, ignore.case = TRUE) ] = "L'Ulivo" # coalition
 dep$party[ grepl("(RIFONDAZIONE )?COMUNISTA", dep$party, ignore.case = TRUE) ] = "P. Rifondazione Comunista" # PRC
 dep$party[ grepl("DEMOCRATICI CRISTIANI", dep$party, ignore.case = TRUE) ] = "Unione di Centro"
 dep$party[ grepl("SINISTRA DEMOCRATICA", dep$party, ignore.case = TRUE) ] = "Sinistra Democratica" # coalition
 dep$party[ grepl("^MISTO|^DCA(.*)PSI$", dep$party, ignore.case = TRUE) ] = "Misto" # residuals -- leave at end
+table(dep$party, exclude = NULL)
 
 # print(table(dep$party, gsub("(.*)&leg=(\\d+)&(.*)", "\\2", dep$url), exclude = NULL))
 
@@ -213,7 +242,6 @@ dep$party[ grepl("^MISTO|^DCA(.*)PSI$", dep$party, ignore.case = TRUE) ] = "Mist
 # tapply(dep$party, gsub("(.*)leg=(\\d+)(.*)", "\\2", dep$url), dplyr::n_distinct)
 
 # remove unused photos (if you need to reduce the size of the photos_ca folder)
-q$photo = gsub("_\\.", ".", q$photo) # fix little bug
 file.remove(q$photo[ !q$photo %in% dep$photo ])
 
 # fix order and particles in MP names

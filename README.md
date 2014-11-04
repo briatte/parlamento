@@ -6,7 +6,7 @@ Due to network issues with redirect links from the Senate, the scripts are not o
 
 * `ddl.r` -- scrapes bills (_disegni di legge_) and sponsors from legislatures 13--17 (1996-2014)
 * `senato.r` -- scrapes sponsor details to `parlamentari.csv` (all sponsors) and `senatori.csv` (Senate sponsors only)
-* `camera-old.r` -- scrapes MP details for legislatures 13--15 to `camera.csv` (all MPs) and `deputati-old.csv` (sponsors only)
+* `camera-old.r` -- scrapes MP details for legislatures 13--15 to `camera-old.csv` (all MPs) and `deputati-old.csv` (sponsors only)
 * `camera-new.r` -- scrapes MP details for legislatures 16--17 to `deputati-new.csv`(sponsors only)
 
 And that is not to say anything about the complexity of Italian political parties.
