@@ -15,9 +15,13 @@ nrow(buggy) / nrow(b[ !is.na(b$prima), ]) # number of bills with issues < 2%
 
 b$n_a = b$n_au + b$n_co
 
-write.csv(rbind(read.csv("data/deputati-old.csv", stringsAsFactors = FALSE),
-                read.csv("data/deputati-new.csv", stringsAsFactors = FALSE)),
-          "data/deputati.csv", row.names = FALSE)
+s = rbind(read.csv("data/deputati-old.csv", stringsAsFactors = FALSE),
+          read.csv("data/deputati-new.csv", stringsAsFactors = FALSE))
+
+# impute seniority since 1996
+s$nyears = 5 * as.vector(table(s$name)[ s$name ])
+
+write.csv(s, "data/deputati.csv", row.names = FALSE)
 
 # loop over chambers and legislatures
 for(jj in c("ca", "se")) {
@@ -101,8 +105,9 @@ for(jj in c("ca", "se")) {
     n %v% "name" = sp[ network.vertex.names(n), "name" ]
     n %v% "sex" = sp[ network.vertex.names(n), "sex" ]
     n %v% "born" = as.numeric(sp[ network.vertex.names(n), "born" ])
+    n %v% "nyears" = sp[ network.vertex.names(n), "nyears" ]
     n %v% "party" = sp[ network.vertex.names(n), "party" ]
-    # party_url, nyears?, county?
+    # missing, not properly scraped: party_url, county
     n %v% "photo" = sp[ network.vertex.names(n), "photo" ]
     
     network::set.edge.attribute(n, "source", as.character(edges[, 1]))
