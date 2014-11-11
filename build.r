@@ -18,8 +18,8 @@ b$n_a = b$n_au + b$n_co
 s = rbind(read.csv("data/deputati-old.csv", stringsAsFactors = FALSE),
           read.csv("data/deputati-new.csv", stringsAsFactors = FALSE))
 
-# impute seniority since 1996
-s$nyears = 5 * as.vector(table(s$name)[ s$name ])
+# impute seniority since 1996 (five-year mandates)
+s = ddply(s, .(name), transform, nyears = 5 * 1:length(name))
 
 write.csv(s, "data/deputati.csv", row.names = FALSE)
 
@@ -269,6 +269,9 @@ for(jj in c("ca", "se")) {
     }
         
   }
+  
+  if(gexf)
+    zip(paste0("net_it_", jj, ".zip"), dir(pattern = paste0("^net_it_", jj, "\\d{2}\\.gexf$")))
     
 }
 

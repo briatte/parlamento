@@ -118,6 +118,9 @@ sen$party[ grepl("Aut |UDC, SVP e Autonomie|Per il Terzo Polo|Per le Autonomie",
 # number of groups per legislature
 # tapply(sen$party, gsub("(.*)leg=(\\d+)(.*)", "\\2", sen$url), dplyr::n_distinct)
 
+# impute seniority since 1996 (five-year mandates, like Camera)
+sen = ddply(sen, .(name), transform, nyears = 5 * 1:length(name))
+
 write.csv(sen, "data/senatori.csv", row.names = FALSE)
 
 # kthxbye

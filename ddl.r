@@ -52,9 +52,9 @@ b = read.csv(bills, stringsAsFactors = FALSE)
 
 b = subset(b, !grepl("id=(19902|18800|18870|18686)", url))
 
-# parse missing pages
+# parse missing pages [ !FIX: remove sample when done ]
 
-j = sample(b$url[ is.na(b$prima) ], 1000)
+j = sample(b$url[ is.na(b$prima) ], 100)
 for(i in rev(j)) {
   
   cat(sprintf("%4.0f", which(j == i)), str_pad(i, 47, "right"))
@@ -124,7 +124,7 @@ table(b$n_co, exclude = NULL)
 
 table(b$n_au + b$n_co, exclude = NULL)
 
-# less than 1% of bills are ambiguous regarding cosponsors: (35 + 0) / nrow(b)
+# less than 1% of bills are ambiguous regarding cosponsors: (38 + 0) / nrow(b)
 # all others are either single-authored (FALSE/0 cell), or cosponsored (TRUE/1 cell)
 table(b$n_au + b$n_co > 1, b$cofirm_dummy, exclude = NULL)
 
