@@ -52,9 +52,9 @@ b = read.csv(bills, stringsAsFactors = FALSE)
 
 b = subset(b, !grepl("id=(19902|18800|18870|18686)", url))
 
-# parse missing pages [ !FIX: remove sample when done ]
+# parse missing pages
 
-j = sample(b$url[ is.na(b$prima) ], 100)
+j = b$url[ is.na(b$prima) ] # you might want to subsample from these
 for(i in rev(j)) {
   
   cat(sprintf("%4.0f", which(j == i)), str_pad(i, 47, "right"))
@@ -155,4 +155,27 @@ table((b$n_au + b$n_co > 1) & b$sample, b$legislature, exclude = NULL)
 # proportion of bills cosponsored in each legislature (50-70%)
 prop.table(table(b$n_au + b$n_co > 1 & b$sample, b$legislature), 2)
 
+# keywords are present for almost all bills
+with(subset(b, !is.na(prima)), table(legislature, is.na(teseo)))
+
+# several thousands of different unique keywords
+k = unlist(strsplit(b$teseo[ !is.na(b$prima) ], ","))
+k = gsub(" Classificazione provvisoria", "", k)
+k = scrubber(k)
+k = data.frame(table(k))
+k = k[ order(-k$Freq), ]
+nrow(k) # n ~ 3,900 keywords
+
+# approximately 31 keywords identify > 5% of bills
+.05 * nrow(k) # 195
+nrow(k[ k$Freq >= 195, ])
+
+# incl. legislation types, constitution, grants, taxes, children, family...
+subset(k, Freq >= 195)
+
+# export keywords
+write.csv(data.frame(keyword = k$k, freq = k$Freq), "data/keywords.csv",
+          row.names = FALSE)
+
+# export bills
 write.csv(b, bills, row.names = FALSE)

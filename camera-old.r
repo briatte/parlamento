@@ -174,7 +174,6 @@ q = rbind(q, data.frame(
 q$party_url = NA
 
 # download photos (run a couple of times to solve network errors)
-
 for(i in unique(q$photo_url[ grepl("^http", q$photo) ])) {
   
   j = paste(q$legislature[ q$photo_url == i ], q$name[ q$photo_url == i ])
@@ -216,7 +215,7 @@ dep = merge(q, s[, c("uid", "id") ], by = "uid", all = FALSE)
 dep = dep[, names(s)[ !names(s) %in% c("party_url", "uid") ] ]
 names(dep)[ which(names(dep) == "id") ] = "url"
 
-cat(sum(s$id %in% dep$url), "identified MPs", sum(!s$id %in% dep$url), "missing\n")
+cat(sum(s$id %in% dep$url), "identified old MPs", sum(!s$id %in% dep$url), "missing\n")
 
 dep$party_full = dep$party # back up full party name
 dep$party[ dep$party == "ALLEANZA NAZIONALE" ] = "Alleanza Nazionale"

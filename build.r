@@ -3,18 +3,6 @@
 b = read.csv(bills, stringsAsFactors = FALSE)
 b = subset(b, !is.na(prima))
 
-# check all sponsors are recognized
-a = na.omit(unique(c(unlist(strsplit(b$prima, ";")), unlist(strsplit(b$cofirm, ";")))))
-table(a %in% c(sen$url, dep$url, p$url)) # should be below 10
-
-# sponsors that failed to scrape
-buggy = a[ !a %in% c(sen$url, dep$url, p$url) ]
-buggy = buggy[ !grepl("id=(;|$)", buggy) ] # only a handful of cases
-buggy = subset(b, grepl("id=(;|$)", prima) | grepl("id=(;|$)", cofirm))
-nrow(buggy) / nrow(b[ !is.na(b$prima), ]) # number of bills with issues < 2%
-
-b$n_a = b$n_au + b$n_co
-
 s = rbind(read.csv("data/deputati-old.csv", stringsAsFactors = FALSE),
           read.csv("data/deputati-new.csv", stringsAsFactors = FALSE))
 
@@ -22,6 +10,18 @@ s = rbind(read.csv("data/deputati-old.csv", stringsAsFactors = FALSE),
 s = ddply(s, .(name), transform, nyears = 5 * 1:length(name))
 
 write.csv(s, "data/deputati.csv", row.names = FALSE)
+
+# check all sponsors are recognized
+a = na.omit(unique(c(unlist(strsplit(b$prima, ";")), unlist(strsplit(b$cofirm, ";")))))
+table(a %in% c(sen$url, s$url)) # should be below 10
+
+# sponsors that failed to scrape
+buggy = a[ !a %in% c(sen$url, s$url) ]
+buggy = buggy[ !grepl("id=(;|$)", buggy) ] # only a handful of cases
+buggy = subset(b, grepl("id=(;|$)", prima) | grepl("id=(;|$)", cofirm))
+nrow(buggy) / nrow(b[ !is.na(b$prima), ]) # number of bills with issues < 2%
+
+b$n_a = b$n_au + b$n_co
 
 # loop over chambers and legislatures
 for(jj in c("ca", "se")) {

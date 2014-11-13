@@ -1,7 +1,7 @@
 # hi Italy
 
-# WARNING - the scripts might get your IP address banned from accessing the
-# Italian Senate website. You might need to use a VPN to run without issues.
+# WARNING - this script will get your IP address banned from accessing the
+# Italian Senate website. You will need to use a VPN to run without issues.
 
 # SOURCES
 # http://www.senato.it/  : all bills and senators
