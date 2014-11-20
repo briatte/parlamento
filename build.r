@@ -94,7 +94,7 @@ for(jj in c("ca", "se")) {
     # network
     n = network(edges[, 1:2 ], directed = FALSE)
     n %n% "title" = paste(ifelse(jj == "ca", "Camera", "Senato"), ii)
-    n %n% "n_bills" = nrow(data)
+    n %n% "n_bills" = nrow(subset(a, legislature == ii))
     
     n %n% "n_sponsors" = table(subset(a, legislature == ii)$n_a)
     
