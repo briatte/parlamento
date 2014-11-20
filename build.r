@@ -1,7 +1,7 @@
 # reload and complete bills dataset
 
 b = read.csv(bills, stringsAsFactors = FALSE)
-b = subset(b, !is.na(prima))
+b = subset(b, !is.na(prima)) # removes nothing once all bills have been scraped
 
 s = rbind(read.csv("data/deputati-old.csv", stringsAsFactors = FALSE),
           read.csv("data/deputati-new.csv", stringsAsFactors = FALSE))

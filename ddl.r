@@ -124,29 +124,29 @@ table(b$n_co, exclude = NULL)
 
 table(b$n_au + b$n_co, exclude = NULL)
 
-# less than 1% of bills are ambiguous regarding cosponsors: (38 + 0) / nrow(b)
+# less than 1% of bills are ambiguous regarding cosponsors: (62 + 0) / nrow(b)
 # all others are either single-authored (FALSE/0 cell), or cosponsored (TRUE/1 cell)
 table(b$n_au + b$n_co > 1, b$cofirm_dummy, exclude = NULL)
 
-# only a handful of bills mix senators and MPs in their signatories
+# one bill mixes senators and MPs in their signatories
 b$chamber_dummy = 1
-b[ grepl("SATTSEN", b$prima) & grepl("CAM", b$prima), "chamber_dummy" ] = 0   # n = 25
+b[ grepl("SATTSEN", b$prima) & grepl("CAM", b$prima), "chamber_dummy" ] = 0   # n = 0
 b[ grepl("SATTSEN", b$cofirm) & grepl("CAM", b$cofirm), "chamber_dummy" ] = 0 # n = 1
-b[ grepl("SATTSEN", b$prima) & grepl("CAM", b$cofirm), "chamber_dummy" ] = 0  # n = 11
-b[ grepl("SATTSEN", b$cofirm) & grepl("CAM", b$prima), "chamber_dummy" ] = 0  # n = 9
+b[ grepl("SATTSEN", b$prima) & grepl("CAM", b$cofirm), "chamber_dummy" ] = 0  # n = 0
+b[ grepl("SATTSEN", b$cofirm) & grepl("CAM", b$prima), "chamber_dummy" ] = 0  # n = 1
 table(b$chamber_dummy, exclude = NULL)
 
-# only a handful of bills include members of the government
+# no bills with members of the government
 b$notgov_dummy = 1
 b[ grepl("COMPGOV", b$prima), "notgov_dummy" ] = 0  # n = 107
 b[ grepl("COMPGOV", b$cofirm), "notgov_dummy" ] = 0 # n = 0
 table(b$notgov_dummy, exclude = NULL)
 
 # parliamentary-only bills, sponsored in a single chamber, where cosponsors are 'cofirmatari'
-b$sample = b$chamber_dummy & b$cofirm_dummy & b$notgov_dummy
+b$sample = b$chamber_dummy & (b$cofirm_dummy | !b$n_co) & b$notgov_dummy
 table(b$sample, exclude = NULL)
 
-# final sample: cosponsored bills where all three dummies are true
+# final sample: cosponsored bills where all three dummies are true (loses only one bill)
 table((b$n_au + b$n_co > 1) & b$sample, b$legislature, exclude = NULL)
 
 # leave commented out to count percentage of cosponsored bills later
