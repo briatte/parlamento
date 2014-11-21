@@ -181,7 +181,7 @@ for(jj in c("ca", "se")) {
     # print(table(n %v% "party", exclude = NULL))
     
     # number of bills cosponsored
-    nb = c( unlist(strsplit(data$prima, ";")), unlist(strsplit(data$cofirm, ";")) )
+    nb = na.omit(c( unlist(strsplit(data$prima, ";")), unlist(strsplit(data$cofirm, ";")) ))
     nb = sapply(n %v% "url", function(x) {
       sum(nb == x) # ids are unique URLs
     })
