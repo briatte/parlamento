@@ -6,7 +6,7 @@ sp = unique(sp)
 
 if(!file.exists(sponsors))
   write.csv(data.frame(id = sp, name = NA, sex = NA, born = NA, 
-                       party = NA, party_url = NA, photo = NA),
+                       party = NA, party_url = NA, mandate = NA, photo = NA),
             sponsors, row.names = FALSE)
 
 s = read.csv(sponsors, stringsAsFactors = FALSE)
@@ -31,9 +31,19 @@ if(length(k)) {
     
     cat(sprintf("%5.0f", which(k == i)), str_pad(i, 48, "right"))
 
-    x = try(htmlParse(paste0(root, i)), silent = TRUE)
+    file = gsub("/loc/link.asp\\?tipodoc=SATTSEN&leg=", "raw/sen", i)
+    file = paste0(gsub("&id=", "_", file), ".html")
+    if(!file.exists(file))
+      try(download.file(paste0(root, i), file, quiet = TRUE, mode = "wb"), silent = TRUE)
     
-    if(!"try-error" %in% class(x)) {
+    if(!file.info(file)$size) {
+
+      cat(": failed\n")
+      file.remove(file)
+      
+    } else {
+      
+      x = htmlParse(file)
       
       # scrape senator details
       name = xpathSApply(x, "//h1[@class='titolo']", xmlValue)
@@ -41,7 +51,7 @@ if(length(k)) {
       
       party_url = xpathSApply(x, "//div[@id='content']//a[contains(@href, 'sgrp')][1]/@href")
       party_url = gsub(root, "", party_url)
-      party = scrubber(xpathSApply(x, "//div[@id='content']//a[contains(@href, 'sgrp')][1]", xmlValue))
+      party = str_clean(xpathSApply(x, "//div[@id='content']//a[contains(@href, 'sgrp')][1]", xmlValue))
       
       born = xpathSApply(x, "//div[@id='content']//table//td", xmlValue)
       born = unlist(str_split(born, "\\n"))
@@ -50,12 +60,10 @@ if(length(k)) {
       sex = ifelse(grepl("Nat", born), ifelse(grepl("Nata ", born), "F", "M"), NA)
       born = as.numeric(str_extract(born, "[0-9]{4}"))
       
-      s[ s$id == i, ] = c(i, name, sex, born, party, party_url, photo)
+      mandate = paste0(xpathSApply(x, "//ul[@class='composizione']/li/a/@href"), collapse = ";")
+      
+      s[ s$id == i, ] = c(i, name, sex, born, party, party_url, mandate, photo)
       cat(":", name, "\n")
-      
-    } else {
-      
-      cat(": failed\n")
       
     }
     
@@ -93,8 +101,27 @@ write.csv(s, sponsors, row.names = FALSE)
 
 # final senator sponsors
 
-sen = subset(s, grepl("SATTSEN", id) & !is.na(name))[, c("id", "name", "sex", "born", "party", "photo") ]
+sen = subset(s, grepl("SATTSEN", id) & !is.na(name))[, c("id", "name", "sex", "born", "party", "mandate", "photo") ]
 names(sen)[ which(names(sen) == "id") ] = "url"
+
+# seniority that goes back to legislature 1
+sen$mandate = sapply(sen$mandate, function(x) {
+  x = unlist(str_extract_all(x, "&leg=[0-9]+"))
+  paste0(sort(as.numeric(gsub("&leg=", "", x))), collapse = ";")
+})
+
+# legislature minus previous mandates, times mandate length
+sen$nyears = as.numeric(gsub("&leg=", "", str_extract(sen$url, "&leg=[0-9]+")))
+for(i in 1:nrow(sen)) {
+  ii = as.numeric(unlist(strsplit(sen$mandate[i], ";")))
+  sen$nyears[ i ] = 5 * sum(ii < sen$nyears[i])
+}
+
+## impute seniority since 1996 (l. 13) -- best shot
+## note: exclude SE-13 from networks (no variance in seniority)
+# sen = ddply(sen, .(name), transform,
+#             nyears = paste0(sort(gsub("(.*)&leg=(\\d+)(.*)", "\\2", url)), 
+#                             collapse = ";"))
 
 sen$party_full = sen$party
 sen$party[ grepl("^Lega$|Lega Nord|Padania|^LN-Aut$", sen$party) ] = "Lega Nord"
@@ -105,7 +132,7 @@ sen$party[ grepl("Rifondazione Comunista", sen$party) ] = "P. Rifondazione Comun
 sen$party[ sen$party == "NCD" ] = "Nuovo Centrodestra"
 sen$party[ sen$party == "PD" ] = "Partito Democratico"
 sen$party[ sen$party == "PI" ] = "Per l'Italia" # coalition
-sen$party[ sen$party == "GAL" ] = "Grandi Autonomie e Libertà" # coalition
+sen$party[ sen$party == "GAL" | sen$party == "GAL (GS, LA-nS, MpA, NPSI, PpI)" ] = "Grandi Autonomie e Libertà" # coalition
 sen$party[ sen$party == "Insieme con l'Unione Verdi - Comunisti Italiani" ] = "Verdi e Communisti" # coalition
 sen$party[ grepl("FI-PdL XVII|Popolo della Libertà", sen$party) ] = "Forza Italia" # new version of Forza Italia (2013)
 # Monti (small in Senate but not in Chamber)
@@ -118,8 +145,9 @@ sen$party[ grepl("Aut |UDC, SVP e Autonomie|Per il Terzo Polo|Per le Autonomie",
 # number of groups per legislature
 # tapply(sen$party, gsub("(.*)leg=(\\d+)(.*)", "\\2", sen$url), dplyr::n_distinct)
 
-# impute seniority since 1996 (five-year mandates, like Camera)
-sen = ddply(sen, .(name), transform, nyears = 5 * 1:length(name))
+# assign party abbreviations
+sen$partyname = sen$party
+sen$party = as.character(parties[ sen$party ])
 
 write.csv(sen, "data/senatori.csv", row.names = FALSE)
 

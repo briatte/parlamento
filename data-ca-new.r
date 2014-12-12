@@ -46,7 +46,7 @@ for(i in rev(v$file)) {
   
   if(!"try-error" %in% class(h)) {
     
-    name = scrubber(xpathSApply(h, "//div[@class='nominativo']", xmlValue))
+    name = str_clean(xpathSApply(h, "//div[@class='nominativo']", xmlValue))
     party = xpathSApply(h, "//div[@class='datielettoriali']", xmlValue)
 
     photo = xpathSApply(h, "//img[contains(@src, 'scheda_big')]/@src")
@@ -61,13 +61,19 @@ for(i in rev(v$file)) {
     # party_url = xpathSApply(h, "//div[@id='innerContentColumn']//a[contains(@href, 'Gruppo')]/@href")
     # party = xpathSApply(h, "//div[@id='innerContentColumn']//a[contains(@href, 'Gruppo')]", xmlValue)
     
+    mandate = xpathSApply(h, "//a[contains(@href, 'http://storia.camera.it/deputato')]/../..", xmlValue)
+    if(!length(mandate))
+      mandate = NA
+    else
+      mandate = str_clean(mandate)
+    
     if(length(born)) {
             
       p = rbind(p, data.frame(
         name =  gsub("\\((.*)\\)", "", gsub("(.*) - (.*)", "\\1", name)),
         party_abbr = gsub("(.*)( - |\\()(.*)(\\)?)", "\\3", name),
-        party = scrubber(gsub("(.*)(Lista di elezione |Simbolo della candidatura)(.*)(Proclamat)(.*)", "\\3", party)),
-        url = v$url[ v$file == i ],
+        party = str_clean(gsub("(.*)(Lista di elezione |Simbolo della candidatura)(.*)(Proclamat)(.*)", "\\3", party)),
+        url = v$url[ v$file == i ], mandate,
         sex, born, photo, stringsAsFactors = FALSE)) # party, party_url
       
       # cat(":", p$name[ nrow(p) ], "\n")
@@ -90,6 +96,14 @@ for(i in rev(v$file)) {
 }
 
 cat(length(diff), "MPs failed to scrape\n")
+
+p$mandate = gsub("(.*): (.*)", "\\2", p$mandate)
+p$mandate = gsub("(.*) Già (.*)", "\\1", p$mandate) # remove Senato mandates for two MPs
+
+p$mandate = sapply(p$mandate, function(x) {
+  x = unlist(strsplit(x, ",\\s?"))
+  paste0(sort(rom [ x ]), collapse = ";")
+})
 
 subset(p, grepl("\\(", name))
 nrow(subset(p, name == party_abbr))
@@ -157,4 +171,5 @@ p$name = sapply(p$name, function(i) {
 # last name check (della, di, etc.)
 p$name[ grepl("\\s[A-Z]{1,5}\\s", p$name) ]
 
-write.csv(p[, c("url", "name", "sex", "born", "party", "photo") ], "data/deputati-new.csv", row.names = FALSE)
+write.csv(p[, c("url", "name", "sex", "born", "party", "mandate", "photo") ],
+          "data/deputati-new.csv", row.names = FALSE)

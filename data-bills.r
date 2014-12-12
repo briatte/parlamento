@@ -1,9 +1,7 @@
 # parse bill pages
 
-# NOTE - the code does not update the current legislature past the date of the
-# first scrape, but that should not be too complicated to implement if needed.
-# Running on 2014-11-02 returned 4,025 bills for the current legislature (17),
-# between 5,000 and 10,000 bills for legislatures 13-16, 37,388 bills in total.
+# WARNING - this script will get your IP address banned from accessing the
+# Italian Senate website. You will need to use a VPN to run without issues.
 
 if(!file.exists(bills)) {
   
@@ -66,11 +64,11 @@ for(i in rev(j)) {
     if(!"try-error" %in% class(hh)) {
       
       ref = xpathSApply(h, "//div[@id='content']//h1", xmlValue)
-      title = scrubber(xpathSApply(h, "//div[@class='boxTitolo']", xmlValue))
+      title = str_clean(xpathSApply(h, "//div[@class='boxTitolo']", xmlValue))
       
       # date is the last legislative status, not introduction date
-      date = scrubber(xpathSApply(h, "//div[@class='bordoNero']/table/tr/td[3]/strong", xmlValue))
-      kw = scrubber(xpathSApply(h, "//h2[text()='Classificazione TESEO']/following-sibling::p[1]", xmlValue))
+      date = str_clean(xpathSApply(h, "//div[@class='bordoNero']/table/tr/td[3]/strong", xmlValue))
+      kw = str_clean(xpathSApply(h, "//h2[text()='Classificazione TESEO']/following-sibling::p[1]", xmlValue))
       
       # first authors are located in the first div
       # authors of related legislation are located in the second div
@@ -161,7 +159,7 @@ with(subset(b, !is.na(prima)), table(legislature, is.na(teseo)))
 # several thousands of different unique keywords
 k = unlist(strsplit(b$teseo[ !is.na(b$prima) ], ","))
 k = gsub(" Classificazione provvisoria", "", k)
-k = scrubber(k)
+k = str_clean(k)
 k = data.frame(table(k))
 k = k[ order(-k$Freq), ]
 nrow(k) # n ~ 3,900 keywords

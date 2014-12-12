@@ -1,9 +1,18 @@
-# parse MPs, legislatures 16-17
+# parse MPs, legislatures 13-15
 
 cam = "data/camera-old.csv"
 if(!file.exists(cam)) {
   
-  q = data.frame()
+  # start with pages that fail to scrape
+  q = data.frame(
+    name =  c("VALENSISE Raffaele", "TATARELLA Giuseppe"),
+    party = c("Alleanza Nazionale", "Alleanza Nazionale"),
+    url =   c("http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/valera01.asp", "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/d00583.asp"),
+    sex = c("M", "M"),
+    born = c("1921", "1935"),
+    photo = c("http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/VALERA01.jpg", "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/22120.jpg"),
+    mandate = c("VI, VII, VIII, IX, X, XI, XII", "VIII, IX, X, XI, XII"),
+    stringsAsFactors = FALSE)
   diff = c()
   for(leg in paste0("http://leg", c("13", "xiv", "xv"), ".camera.it")) {
     
@@ -31,8 +40,8 @@ if(!file.exists(cam)) {
         
       } else {
         
-        t = data.frame(name = scrubber(xpathSApply(f, "//table//tr/td[1]", xmlValue)),  # name
-                       party = scrubber(xpathSApply(f, "//table//tr/td[2]", xmlValue)), # party
+        t = data.frame(name = str_clean(xpathSApply(f, "//table//tr/td[1]", xmlValue)),  # name
+                       party = str_clean(xpathSApply(f, "//table//tr/td[2]", xmlValue)), # party
                        stringsAsFactors = FALSE)
         
         # fix empty row on legislature 13 letter M
@@ -45,7 +54,8 @@ if(!file.exists(cam)) {
         
         p = data.frame()
         
-        for(i in rev(t$url)) {
+        # avoid two MPs coded differently
+        for(i in rev(t$url[ !t$url %in% c("http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/valera01.asp", "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/d00583.asp") ])) {
                     
           # legislature number
           h = str_extract(i, "13|xiv|xv")
@@ -63,25 +73,36 @@ if(!file.exists(cam)) {
 
           ## cat("\nParsing", h)
           h = try(htmlParse(h), silent = TRUE)
-          
+                    
           if(!"try-error" %in% class(h)) {
             
-            # name = scrubber(xpathSApply(h, "//div[@id='innerContentColumn']//strong[1]", xmlValue))
+            # name = str_clean(xpathSApply(h, "//div[@id='innerContentColumn']//strong[1]", xmlValue))
             photo = xpathSApply(h, "//img[contains(@src, '.jpg')]/@src")
             if(!length(photo))
               photo = NA
             
+            # works only for leg. XV
             born = xpathSApply(h, "//div[@id='innerContentColumn']//p[2]", xmlValue)
-            
+            mandate = NA
+              
             # fix leg. XIV
-            if(grepl("xiv", i))
+            if(grepl("xiv", i)) {
               born = xpathSApply(h, "//div[@id='schedaDepDatiPers']", xmlValue)
+              mandate = str_clean(gsub("(.*) nell(a|e) legislatur(a|e) (.*)Iscritto (.*)", "\\4", born))
+              if(grepl("\\d", mandate))
+                mandate = NA
+            }
 
             # fix leg. XIII
             if(!length(born)) {
               born = xpathSApply(h, "//div[@id='innerContentColumn']//div[2]", xmlValue)
+              mandate = str_clean(gsub("(.*) nell(a|e) legislatur(a|e) (.*)", "\\4", born))
+              if(grepl("\\d", mandate))
+                mandate = NA
               born = str_extract(born, "Nat(o|a)(.*)(\\d{4})")
             }
+            
+            ## cat(":", mandate, "\n")
             
             sex = ifelse(grepl("Nat", born), ifelse(grepl("Nata ", born), "F", "M"), NA)
             born = str_extract(born, "[0-9]{4}")
@@ -96,7 +117,8 @@ if(!file.exists(cam)) {
                 name =  t$name[ which(t$url == i) ],
                 party = t$party[ which(t$url == i) ],
                 url =   t$url[ which(t$url == i) ],
-                sex, born, photo, stringsAsFactors = FALSE)) # party, party_url
+                sex, born, photo, mandate,
+                stringsAsFactors = FALSE)) # party, party_url
               
             } else {
               
@@ -137,10 +159,23 @@ if(!file.exists(cam)) {
   q$legislature[ grepl("legxiv", q$url) ] = "14"
   q$legislature[ grepl("legxv", q$url) ]  = "15"
   
+  # impute mandates in l. 15 (very approximate)
+  old = q$name[ q$legislature == "14" ]
+  new = q$name[ q$legislature == "15" ]
+  table(new %in% old)
+  q$mandate[ q$legislature == "15" & q$name %in% new[ new %in% old ] ] =
+    paste0(q$mandate[ q$legislature == "14" & q$name %in% new[ new %in% old ] ], ", XIV")
+  
+  q$mandate = sapply(q$mandate, function(x) {
+    x = unlist(strsplit(x, ",\\s?"))
+    paste0(sort(rom [ x ]), collapse = ";")
+  })
+  
   # photo
   
-  q$photo[ q$legislature == "13" ] = paste0("http://leg13.camera.it/cartellecomuni/leg13/Deputati/scheda_deputato/",
-                                            q$photo[ q$legislature == "13" ])
+  q$photo[ q$legislature == "13" & !grepl("^http", q$photo) ] = 
+    paste0("http://leg13.camera.it/cartellecomuni/leg13/Deputati/scheda_deputato/",
+           q$photo[ q$legislature == "13" & !grepl("^http", q$photo) ])
   q$photo[ q$legislature == "14" ] = paste0("http://legxiv.camera.it",
                                             q$photo[ q$legislature == "14" ])
   q$photo[ q$legislature == "15" ] = paste0("http://legxv.camera.it",
@@ -154,21 +189,21 @@ if(!file.exists(cam)) {
 
 q = read.csv(cam, stringsAsFactors = FALSE)
 
-# add the two missing sponsors
-q = rbind(q, data.frame(
-  name = c("VALENSISE Raffaele", "TATARELLA Giuseppe"),
-  party = c("Alleanza Nazionale", "Alleanza Nazionale"),
-  url = c("http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/valera01.asp", 
-          "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/d00583.asp"),
-  sex = c("M", "M"),
-  born = c("1921", "1935"),
-  photo = c("http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/VALERA01.jpg",
-            "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/22120.jpg"),
-  legislature = c(13, 13),
-  photo_url = c(
-    "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/VALERA01.jpg",
-    "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/22120.jpg"
-  ), stringsAsFactors = FALSE))
+# # add the two missing sponsors
+# q = rbind(q, data.frame(
+#   name = c("VALENSISE Raffaele", "TATARELLA Giuseppe"),
+#   party = c("Alleanza Nazionale", "Alleanza Nazionale"),
+#   url = c("http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/valera01.asp", 
+#           "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/d00583.asp"),
+#   sex = c("M", "M"),
+#   born = c("1921", "1935"),
+#   photo = c("http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/VALERA01.jpg",
+#             "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/22120.jpg"),
+#   legislature = c(13, 13),
+#   photo_url = c(
+#     "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/VALERA01.jpg",
+#     "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/22120.jpg"
+#   ), stringsAsFactors = FALSE))
 
 # useless addition to match senator dataset (ignored afterwards)
 q$party_url = NA
@@ -201,6 +236,9 @@ q$uid = NA
 q$uid[ q$legislature == "13" ] = gsub("(.*)(id=)(d)(.*)", "\\3\\4", q$url[ q$legislature == "13" ])
 q$uid[ q$legislature != "13" ] = gsub("(.*)(deputato=)(d)(\\d+)(.*)", "\\3\\4", q$url[ q$legislature != "13" ])
 q$uid = paste0(q$legislature, q$uid)
+
+# bugfix for 'FrontPage'-style sponsors
+q$uid[ q$url == "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/d00583.asp" ] = "13d00583"
 
 s = read.csv(sponsors, stringsAsFactors = FALSE)
 s = subset(s, grepl("CAM\\.DEP", id))
@@ -258,4 +296,5 @@ dep$name = sapply(dep$name, function(i) {
   return(paste(paste0(j, collapse = " "), paste0(k, collapse = " ")))
 })
 
-write.csv(dep[, c("url", "name", "sex", "born", "party", "photo") ], "data/deputati-old.csv", row.names = FALSE)
+write.csv(dep[, c("url", "name", "sex", "born", "party", "mandate", "photo") ],
+          "data/deputati-old.csv", row.names = FALSE)
