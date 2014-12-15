@@ -87,12 +87,12 @@ if(!file.exists(cam)) {
               
             # fix leg. XIV
             if(grepl("xiv", i)) {
-              born = xpathSApply(h, "//div[@id='schedaDepDatiPers']", xmlValue)
+              born = str_clean(xpathSApply(h, "//div[@id='schedaDepDatiPers']", xmlValue))
               mandate = str_clean(gsub("(.*) nell(a|e) legislatur(a|e) (.*)Iscritto (.*)", "\\4", born))
               if(grepl("\\d", mandate))
                 mandate = NA
             }
-
+            
             # fix leg. XIII
             if(!length(born)) {
               born = xpathSApply(h, "//div[@id='innerContentColumn']//div[2]", xmlValue)
@@ -168,7 +168,7 @@ if(!file.exists(cam)) {
   
   q$mandate = sapply(q$mandate, function(x) {
     x = unlist(strsplit(x, ",\\s?"))
-    paste0(sort(rom [ x ]), collapse = ";")
+    paste0(sort(rom[ x ]), collapse = ";")
   })
   
   # photo
@@ -188,25 +188,6 @@ if(!file.exists(cam)) {
 }
 
 q = read.csv(cam, stringsAsFactors = FALSE)
-
-# # add the two missing sponsors
-# q = rbind(q, data.frame(
-#   name = c("VALENSISE Raffaele", "TATARELLA Giuseppe"),
-#   party = c("Alleanza Nazionale", "Alleanza Nazionale"),
-#   url = c("http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/valera01.asp", 
-#           "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/d00583.asp"),
-#   sex = c("M", "M"),
-#   born = c("1921", "1935"),
-#   photo = c("http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/VALERA01.jpg",
-#             "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/22120.jpg"),
-#   legislature = c(13, 13),
-#   photo_url = c(
-#     "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/VALERA01.jpg",
-#     "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/22120.jpg"
-#   ), stringsAsFactors = FALSE))
-
-# useless addition to match senator dataset (ignored afterwards)
-q$party_url = NA
 
 # download photos (run a couple of times to solve network errors)
 for(i in unique(q$photo_url[ grepl("^http", q$photo) ])) {
