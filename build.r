@@ -32,7 +32,7 @@ for(jj in c("ca", "se")) {
     # directed edge list
     #
     
-    edges = rbind.fill(lapply((1:nrow(data)), function(i) {
+    edges = rbind_all(lapply((1:nrow(data)), function(i) {
       
       # first authors
       w = unlist(strsplit(data$prima[ i ], ";"))

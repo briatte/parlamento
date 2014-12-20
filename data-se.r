@@ -117,12 +117,6 @@ for(i in 1:nrow(sen)) {
   sen$nyears[ i ] = 5 * sum(ii < sen$nyears[i])
 }
 
-## impute seniority since 1996 (l. 13) -- best shot
-## note: exclude SE-13 from networks (no variance in seniority)
-# sen = ddply(sen, .(name), transform,
-#             nyears = paste0(sort(gsub("(.*)&leg=(\\d+)(.*)", "\\2", url)), 
-#                             collapse = ";"))
-
 sen$party_full = sen$party
 sen$party[ grepl("^Lega$|Lega Nord|Padania|^LN-Aut$", sen$party) ] = "Lega Nord"
 sen$party[ grepl("Ulivo", sen$party) ] = "L'Ulivo"

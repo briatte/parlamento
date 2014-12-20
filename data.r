@@ -30,11 +30,6 @@ b = subset(b, prima != "/loc/link.asp?tipodoc=CAM.DEP&leg=15&id=50433")
 s = rbind(read.csv("data/deputati-old.csv", stringsAsFactors = FALSE),
           read.csv("data/deputati-new.csv", stringsAsFactors = FALSE))
 
-# impute seniority since 1996 (five-year mandates) -- best shot
-# s = ddply(s, .(name), transform,
-#           nyears = paste0(sort(gsub("(.*)&leg=(\\d+)(.*)", "\\2", url)), 
-#                           collapse = ";"))
-
 # assign party abbreviations
 s$partyname = s$party
 s$party = as.character(parties[ s$party ])
