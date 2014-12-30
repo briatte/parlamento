@@ -66,7 +66,7 @@ parties = c(
 
 scores = c(
   "PRC" = 0.9,
-  "SEL" = 1.2,
+  "SEL" = 1.3,
   "PCI" = 1.6,
   "VERD/COM" = 2,
   "VERD" = 2.6,
