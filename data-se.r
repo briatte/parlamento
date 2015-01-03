@@ -5,7 +5,7 @@ sp = unlist(str_split(sp, ";"))
 sp = unique(sp)
 
 if(!file.exists(sponsors))
-  write.csv(data.frame(id = sp, name = NA, sex = NA, born = NA, 
+  write.csv(data.frame(id = sp, name = NA, sex = NA, born = NA, circo = NA,
                        party = NA, party_url = NA, mandate = NA, photo = NA),
             sponsors, row.names = FALSE)
 
@@ -15,7 +15,7 @@ sp = sp[ !sp %in% s$id ]
 if(length(sp)) {
   
   cat("Adding", length(sp), "new sponsor(s) to dataset\n")
-  s = rbind(data.frame(id = sp, name = NA, sex = NA, born = NA, 
+  s = rbind(data.frame(id = sp, name = NA, sex = NA, born = NA, circo = NA,
                        party = NA, party_url = NA, photo = NA), s)
   
 }
@@ -55,6 +55,13 @@ if(length(k)) {
       
       born = xpathSApply(x, "//div[@id='content']//table//td", xmlValue)
       born = unlist(str_split(born, "\\n"))
+      
+      circo = born[ grepl("(Circoscrizione estera|Regione) di elezione", born) ]
+      circo = gsub("(Circoscrizione estera di elezione|Regione di elezione): ", "", circo)
+      circo = gsub(" - Collegio(.*)", "", circo)
+      circo = ifelse(!length(circo), ifelse(any(grepl("a vita", born)), "SENATORE A VITA", NA),
+                     toupper(str_clean(circo)))
+      
       born = born[ grepl("Nat(o|a)", born) ]
       
       sex = ifelse(grepl("Nat", born), ifelse(grepl("Nata ", born), "F", "M"), NA)
@@ -62,7 +69,7 @@ if(length(k)) {
       
       mandate = paste0(xpathSApply(x, "//ul[@class='composizione']/li/a/@href"), collapse = ";")
       
-      s[ s$id == i, ] = c(i, name, sex, born, party, party_url, mandate, photo)
+      s[ s$id == i, ] = c(i, name, sex, born, circo, party, party_url, mandate, photo)
       cat(":", name, "\n")
       
     }
@@ -70,6 +77,11 @@ if(length(k)) {
   }
   
 }
+
+# harmonize to Camera codes
+s$circo[ s$circo == "ASIA-AFRICA-OCEANIA-ANTARTIDE" ] = "AFRICA, ASIA, OCEANIA E ANTARTIDE"
+s$circo[ s$circo == "EMILIA ROMAGNA" ] = "EMILIA-ROMAGNA"
+s$circo[ s$circo == "VALLE D'AOSTA" ] = "AOSTA"
 
 # download photos (run a couple of times to solve network errors)
 
@@ -118,26 +130,46 @@ for(i in 1:nrow(sen)) {
 }
 
 sen$party_full = sen$party
-sen$party[ grepl("^Lega$|Lega Nord|Padania|^LN-Aut$", sen$party) ] = "Lega Nord"
-sen$party[ grepl("Ulivo", sen$party) ] = "L'Ulivo"
 
-sen$party[ grepl("^CCD-CDU|Cristiano Democratic|Democraticicristiani", sen$party) ] = "Unione di Centro"
-sen$party[ grepl("Rifondazione Comunista", sen$party) ] = "P. Rifondazione Comunista"
+# parties
 sen$party[ sen$party == "NCD" ] = "Nuovo Centrodestra"
 sen$party[ sen$party == "PD" ] = "Partito Democratico"
-sen$party[ sen$party == "PI" ] = "Per l'Italia" # coalition
-sen$party[ sen$party == "GAL" | sen$party == "GAL (GS, LA-nS, MpA, NPSI, PpI)" ] = "Grandi Autonomie e Libertà" # coalition
-sen$party[ sen$party == "Insieme con l'Unione Verdi - Comunisti Italiani" ] = "Verdi e Communisti" # coalition
-sen$party[ grepl("FI-PdL XVII|Popolo della Libertà", sen$party) ] = "Forza Italia" # new version of Forza Italia (2013)
-# Monti (small in Senate but not in Chamber)
-sen$party[ sen$party == "SCpI" ] = "Scelta Civica con Monti"
-# residuals: regionalists, Third Pole; n < 10 for each
-sen$party[ grepl("Aut |UDC, SVP e Autonomie|Per il Terzo Polo|Per le Autonomie", sen$party) ] = "Misto"
+sen$party[ sen$party == "SCpI" ] = "Scelta Civica"
+sen$party[ sen$party == "M5S" ] = "Movimento 5 Stelle"
+sen$party[ sen$party == "Partito Democratico-L'Ulivo" ] = "L'Ulivo" # l. 15, n = 1
+sen$party[ grepl("^Lega$|Lega Nord|Padania|^LN-Aut$", sen$party) ] = "Lega Nord"
+sen$party[ grepl("FI-PdL XVII|Popolo della Libertà", sen$party) ] = "Forza Italia"
+sen$party[ grepl("Rifondazione Comunista", sen$party) ] = "P. Rifondazione Comunista"
+sen$party[ grepl("^Margherita", sen$party) ] = "Margherita"
+
+# coalitions
+sen$party[ sen$party == "Insieme con l'Unione Verdi - Comunisti Italiani" ] = "Verdi e Communisti" # 2006-2008
+sen$party[ sen$party == "GAL (GS, LA-nS, MpA, NPSI, PpI)" ] = "Grandi Autonomie e Libertà" # 2013
+sen$party[ sen$party == "PI" ] = "Per l'Italia" # split from SCpI, 2013
+sen$party[ sen$party == "Aut (SVP, UV, PATT, UPT)-PSI-MAIE" ] = "Autonomie, PSI e MAIE" # l. 17
+
+# breakup of L'Ulivo factions
+sen$party[ sen$party == "Verdi - l'Ulivo" ] = "Verdi" # l. 13-14
+sen$party[ sen$party == "Sinistra Democratica - l'Ulivo" ] = "Sinistra Democratica" # l. 13
+sen$party[ sen$party == "Democratici di Sinistra - l'Ulivo" ] = "Democratici di Sinistra" # l. 13-14
+
+# Christian-Democrats: CCD (5.9) in l. 13
+sen$party[ grepl("^Centro Cristiano Democratico|CCD$", sen$party) ] = "Centro Cristiano Democratico"
+# Christian-Democrats: CDU (6.2) in l. 13
+sen$party[ grepl("CDU$", sen$party) ] = "Cristiani Democratici Uniti"
+# Christian-Democrats: UDC (6) in l. 15
+sen$party[ sen$party == "Unione dei Democraticicristiani e di Centro (UDC)" ] = "Unione di Centro"
+
+# MpA, l. 14
+sen$party[ sen$party == "Per le Autonomie" ] = "Movimento per le Autonomie"
+
+# Residual: Third Pole (n = 3; 2010, disbanded 2012)
+sen$party[ grepl("Per il Terzo Polo", sen$party) ] = "Misto"
 
 # print(table(sen$party, gsub("(.*)leg=(\\d+)(.*)", "\\2", sen$url), exclude = NULL))
 
 # number of groups per legislature
-# tapply(sen$party, gsub("(.*)leg=(\\d+)(.*)", "\\2", sen$url), dplyr::n_distinct)
+# tapply(sen$party, gsub("(.*)leg=(\\d+)(.*)", "\\2", sen$url), n_distinct)
 
 # assign party abbreviations
 sen$partyname = sen$party

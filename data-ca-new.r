@@ -68,12 +68,13 @@ for(i in rev(v$file)) {
       mandate = str_clean(mandate)
     
     if(length(born)) {
-            
+      
       p = rbind(p, data.frame(
         name =  gsub("\\((.*)\\)", "", gsub("(.*) - (.*)", "\\1", name)),
         party_abbr = gsub("(.*)( - |\\()(.*)(\\)?)", "\\3", name),
         party = str_clean(gsub("(.*)(Lista di elezione |Simbolo della candidatura)(.*)(Proclamat)(.*)", "\\3", party)),
         url = v$url[ v$file == i ], mandate,
+        circo = str_clean(gsub("(.*)(Lista di elezione |Simbolo della candidatura)(.*)", "\\1", party)),
         sex, born, photo, stringsAsFactors = FALSE)) # party, party_url
       
       # cat(":", p$name[ nrow(p) ], "\n")
@@ -97,6 +98,12 @@ for(i in rev(v$file)) {
 
 cat(length(diff), "MPs failed to scrape\n")
 
+p$circo = gsub("(.*)\\((.*)\\)", "\\2", p$circo)
+p$circo = gsub("\\s\\d", "", p$circo)
+p$circo[ grepl("AOSTA", p$circo) ] = "AOSTA"
+p$circo[ grepl("MARCAZZAN", p$circo) ] = "LOMBARDIA" # Anna Teresa FORMISANO, 16_302085
+p$circo = toupper(p$circo)
+
 p$mandate = gsub("(.*): (.*)", "\\2", p$mandate)
 p$mandate = gsub("(.*) Già (.*)", "\\1", p$mandate) # remove Senato mandates for two MPs
 
@@ -110,6 +117,7 @@ nrow(subset(p, name == party_abbr))
 table(p$party_abbr[p$party_abbr != p$name])
 
 table(p$party, gsub("(.*)leg=(\\d+)(.*)", "\\2", p$url))
+
 p$party[ p$party == "PARTITO DEMOCRATICO" ] = "Partito Democratico"
 p$party[ p$party == "SINISTRA ECOLOGIA LIBERTA'" ] = "Sinistra Ecologia Libertà" # l. 16-17 only
 p$party[ p$party == "CENTRO DEMOCRATICO" ] = "Centro Democratico"
@@ -118,14 +126,17 @@ p$party[ p$party == "DI PIETRO ITALIA DEI VALORI" ] = "Italia dei Valori"
 p$party[ p$party == "IL POPOLO DELLA LIBERTA'" ] = "Il Popolo della Libertà"
 p$party[ p$party == "FRATELLI D'ITALIA" ] = "Fratelli d'Italia"
 p$party[ p$party == "LEGA NORD" ] = "Lega Nord"
-p$party[ p$party == "MOVIMENTO 5 STELLE BEPPEGRILLO.IT" ] = "M5S"
-p$party[ grepl("MONTI PER L'ITALIA", p$party) ] = "Scelta Civica con Monti"
-# residuals: autonomous regionalists (e.g. SVP), less than 3 seats in legislatures 16-17
-# also include Italians abroad:
-# South American Union Italian Emigrants (Unione Sudamericana Emigranti Italiani)
-# Associative Movement Italians Abroad (Movimento Associativo Italiani all'Estero)
-p$party[ grepl("^USEI$|^SVP$|ITALIANI ALL'ESTERO|AUTONOMIE LIBERTE DEMOCRATIE|AUTONOMIA ALLEANZA PER IL SUD|SUDTIROLER|VALLEE D'AOSTE", p$party) ] = "Misto"
-table(p$party, gsub("(.*)leg=(\\d+)(.*)", "\\2", p$url))
+p$party[ p$party == "MOVIMENTO 5 STELLE BEPPEGRILLO.IT" ] = "Movimento 5 Stelle"
+p$party[ p$party == "MOVIMENTO PER L'AUTONOMIA ALLEANZA PER IL SUD" ] = "Movimento per l'Autonomia"
+p$party[ grepl("MONTI PER L'ITALIA", p$party) ] = "Scelta Civica"
+p$party[ p$party %in% c("SVP", "SUDTIROLER VOLKSPARTEI") ] = "Südtiroler Volkspartei"
+# Residuals:
+# - regionalists with less than 3 seats in legislatures 16-17 (ALD, Aosta)
+# - Italians abroad:
+#   - South American Union Italian Emigrants (Unione Sudamericana Emigranti Italiani) -- USEI
+#   - Associative Movement Italians Abroad (Movimento Associativo Italiani all'Estero) -- MAIE
+p$party[ grepl("^USEI$|ITALIANI ALL'ESTERO|AUTONOMIE LIBERTE DEMOCRATIE|VALLEE D'AOSTE", p$party) ] = "Misto"
+# table(p$party, gsub("(.*)leg=(\\d+)(.*)", "\\2", p$url))
 
 # fix duplicate names before downloading photos
 p$name[ p$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=16&id=38120" ] = "PEPE-1 Mario"

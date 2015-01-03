@@ -12,6 +12,7 @@ if(!file.exists(cam)) {
     born = c("1921", "1935"),
     photo = c("http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/VALERA01.jpg", "http://leg13.camera.it/cartellecomuni/deputati/composizione/leg13/Composizione/schede_/img/22120.jpg"),
     mandate = c("VI, VII, VIII, IX, X, XI, XII", "VIII, IX, X, XI, XII"),
+    circo = c("CALABRIA", "PUGLIA"),
     stringsAsFactors = FALSE)
   diff = c()
   for(leg in paste0("http://leg", c("13", "xiv", "xv"), ".camera.it")) {
@@ -71,35 +72,53 @@ if(!file.exists(cam)) {
           
           hh = h
 
-          ## cat("\nParsing", h)
+          # cat("\nParsing", h)
           h = try(htmlParse(h), silent = TRUE)
                     
           if(!"try-error" %in% class(h)) {
-            
+                        
             # name = str_clean(xpathSApply(h, "//div[@id='innerContentColumn']//strong[1]", xmlValue))
             photo = xpathSApply(h, "//img[contains(@src, '.jpg')]/@src")
             if(!length(photo))
               photo = NA
             
             # works only for leg. XV
+            circo = xpathSApply(h, "//div[@id='innerContentColumn']", xmlValue)
+            circo = gsub("(.*) circoscrizione [A-Z]+ \\((.*)", "\\2", circo)
+            circo = gsub("(\\w+)\\)(.*)", "\\1", circo)
+            
             born = xpathSApply(h, "//div[@id='innerContentColumn']//p[2]", xmlValue)
             mandate = NA
               
             # fix leg. XIV
             if(grepl("xiv", i)) {
+              
+              circo = xpathSApply(h, "//div[@id='schedaDepDatiPers']", xmlValue)
+              circo = unlist(strsplit(circo, "\\s{2,}"))
+              circo = circo[ grepl("circoscrizione", circo) ]
+              
               born = str_clean(xpathSApply(h, "//div[@id='schedaDepDatiPers']", xmlValue))
+              
               mandate = str_clean(gsub("(.*) nell(a|e) legislatur(a|e) (.*)Iscritto (.*)", "\\4", born))
               if(grepl("\\d", mandate))
                 mandate = NA
+              
             }
             
             # fix leg. XIII
             if(!length(born)) {
+              
               born = xpathSApply(h, "//div[@id='innerContentColumn']//div[2]", xmlValue)
+              
+              circo = unlist(strsplit(born, "\\s{2,}"))
+              circo = circo[ grepl("circoscrizione", circo) ]
+              
               mandate = str_clean(gsub("(.*) nell(a|e) legislatur(a|e) (.*)", "\\4", born))
               if(grepl("\\d", mandate))
                 mandate = NA
+              
               born = str_extract(born, "Nat(o|a)(.*)(\\d{4})")
+              
             }
             
             ## cat(":", mandate, "\n")
@@ -112,12 +131,13 @@ if(!file.exists(cam)) {
             
             if(length(born) > 0) {
               
+              circo = ifelse(!length(circo), NA, circo)
               ## cat(":", born, t$name[ which(t$url == i) ])
               p = rbind(p, data.frame(
                 name =  t$name[ which(t$url == i) ],
                 party = t$party[ which(t$url == i) ],
                 url =   t$url[ which(t$url == i) ],
-                sex, born, photo, mandate,
+                sex, born, photo, mandate, circo,
                 stringsAsFactors = FALSE)) # party, party_url
               
             } else {
@@ -142,7 +162,20 @@ if(!file.exists(cam)) {
     }
     
   }
+  # constituencies
+  q$circo = gsub("(nella\\s)?circoscrizione\\s|Collegio:\\s|(Lista\\sdi\\selezione:\\s|Proclamato)(.*)|\\d", "",
+                 q$circo)
+  q$circo = gsub("^[XIV]+\\s(.*)", "\\1", q$circo)
+  q$circo = gsub("\\(|\\)|\\s-$", "\\1", q$circo)
+  q$circo = gsub("^(XVIII|XXIII|XXVII)(.*)", "\\2", q$circo)
+  q$circo[ q$circo == "" | grepl("Inizio contenuto", q$circo) ] = NA
+  q$circo = toupper(str_clean(q$circo))
 
+  # final simplifications
+  q$circo[ q$circo == "ABRUZZI" ] = "ABRUZZO"
+  q$circo[ q$circo == "VALLE D'AOSTA" ] = "AOSTA"
+  # q$circo[ grepl("AFRICA|AMERICA|EUROPA", q$circo) ] = "ALL'ESTERO" # abroad
+  
   # pages that failed to scrape
   # two pages from l. 13 are coded completely differently and a few others are empty
   
@@ -236,21 +269,37 @@ names(dep)[ which(names(dep) == "id") ] = "url"
 
 cat(sum(s$id %in% dep$url), "identified old MPs", sum(!s$id %in% dep$url), "missing\n")
 
+# parties
 dep$party_full = dep$party # back up full party name
 dep$party[ dep$party == "ALLEANZA NAZIONALE" ] = "Alleanza Nazionale"
-dep$party[ dep$party %in% c("", "MISTO") ] = "Misto"
-dep$party[ dep$party == "" ] = "Misto"
 dep$party[ dep$party == "FORZA ITALIA" ] = "Forza Italia"
 dep$party[ dep$party == "ITALIA DEI VALORI" ] = "Italia dei Valori"
-dep$party[ grepl("POPOLARI|UDEUR|Unione Democratici per l'Europa", dep$party, ignore.case = TRUE) ] =  "Popolari-UDEUR"
-dep$party[ grepl("COMUNISTI ITALIANI", dep$party, ignore.case = TRUE) ] = "P. Comunisti Italiani" # incl. Misto (PCI)
-dep$party[ dep$party == "SOCIALISTI E RADICALI-RNP" ] = "Socialisti e Radicali" # coalition
-dep$party[ dep$party == "VERDI" ] = "Verdi" # Federazione dei Verdi
+dep$party[ dep$party == "I Democratici - L'Ulivo" ] = "I Democratici"
+dep$party[ dep$party == "MISTO (MPA-MOVIMENTO PER L'AUTONOMIA)" ] = "Movimento per l'Autonomia"
+dep$party[ dep$party == "MISTO (MINORANZE LINGUISTICHE)" ] = "linguistic minorities"
+dep$party[ dep$party %in% c("SOCIALISTI E RADICALI-RNP", "MISTO (LA ROSA NEL PUGNO)") ] = "Rosa nel Pugno" # l. 14-15
+dep$party[ dep$party %in% c("MISTO (VERDI-L'UNIONE)", "VERDI") ] = "Verdi" # Federazione dei Verdi
+# includes two small coalitions with Nuovo PSI in both
+
+dep$party[ dep$party %in% c("", "MISTO") | grepl("NUOVO PSI", dep$party) ] = "Misto"
 dep$party[ grepl("LEGA NORD", dep$party, ignore.case = TRUE) ] = "Lega Nord"
-dep$party[ grepl("L'ULIVO", dep$party, ignore.case = TRUE) ] = "L'Ulivo" # coalition
+dep$party[ grepl("DEMOCRATICI DI SINISTRA", dep$party, ignore.case = TRUE) ] = "Democratici di Sinistra" # l. 13-14
+dep$party[ grepl("SINISTRA DEMOCRATICA", dep$party, ignore.case = TRUE) ] = "Sinistra Democratica" # l. 15
+dep$party[ dep$party %in% c("L'ULIVO", "PARTITO DEMOCRATICO-L'ULIVO") ] = "L'Ulivo" # l. 15 -- ULIV-PD
+dep$party[ grepl("^MARGHERITA", dep$party) ] = "Margherita"
+dep$party[ grepl("POPOLARI|UDEUR|Unione Democratici per l'Europa", dep$party, ignore.case = TRUE) ] =  "Popolari-UDEUR"
+
+# PdCI, coded as PdCI in l. 15, coded as Misto PdCI in l. 14
+dep$party[ grepl("COMUNISTI ITALIANI", dep$party, ignore.case = TRUE) ] = "P. Comunisti Italiani"
+# PRC, coded as PRC in l. 14 and PRC - Sinistra Europea in l. 15
 dep$party[ grepl("(RIFONDAZIONE )?COMUNISTA", dep$party, ignore.case = TRUE) ] = "P. Rifondazione Comunista" # PRC
+
+# CCD-CDU in l. 14, UDC afterwards
+dep$party[ grepl("DEMOCRATICI CRISTIANI", dep$party, ignore.case = TRUE) & 
+             gsub("(.*)&leg=(\\d+)&(.*)", "\\2", dep$url) == "14" ] = "CCD-CDU: Biancofiore"
 dep$party[ grepl("DEMOCRATICI CRISTIANI", dep$party, ignore.case = TRUE) ] = "Unione di Centro"
-dep$party[ grepl("SINISTRA DEMOCRATICA", dep$party, ignore.case = TRUE) ] = "Sinistra Democratica" # coalition
+
+# Residuals: Ecologisti Democratici (n = 4), La Destra (n = 4), Movimento Repubblicani Europei (n = 3)
 dep$party[ grepl("^MISTO|^DCA(.*)PSI$", dep$party, ignore.case = TRUE) ] = "Misto" # residuals -- leave at end
 table(dep$party, exclude = NULL)
 
