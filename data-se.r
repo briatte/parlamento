@@ -138,7 +138,7 @@ sen$party[ sen$party == "SCpI" ] = "Scelta Civica"
 sen$party[ sen$party == "M5S" ] = "Movimento 5 Stelle"
 sen$party[ sen$party == "Partito Democratico-L'Ulivo" ] = "L'Ulivo" # l. 15, n = 1
 sen$party[ grepl("^Lega$|Lega Nord|Padania|^LN-Aut$", sen$party) ] = "Lega Nord"
-sen$party[ grepl("FI-PdL XVII|Popolo della Libertà", sen$party) ] = "Forza Italia"
+sen$party[ grepl("FI-PdL XVII|Popolo della Libertà", sen$party) ] = "Il Popolo della Libertà" # l. 16-17
 sen$party[ grepl("Rifondazione Comunista", sen$party) ] = "P. Rifondazione Comunista"
 sen$party[ grepl("^Margherita", sen$party) ] = "Margherita"
 

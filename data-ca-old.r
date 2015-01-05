@@ -326,5 +326,9 @@ dep$name = sapply(dep$name, function(i) {
   return(paste(paste0(j, collapse = " "), paste0(k, collapse = " ")))
 })
 
+# missing genders
+dep$sex[ dep$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=13&id=d00283" ] = "M" # Pasquale GIULIANO
+dep$sex[ dep$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=13&id=d00640" ] = "F" # Grazia SESTINI
+
 write.csv(dep[, c("url", "name", "sex", "born", "party", "mandate", "photo") ],
           "data/deputati-old.csv", row.names = FALSE)
