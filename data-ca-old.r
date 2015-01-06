@@ -241,8 +241,9 @@ for(i in unique(q$photo_url[ grepl("^http", q$photo) ])) {
   
 }
 
-# buggy profile (leave after photo loop)
+# buggy profile (no photo so leave after photo loop to get photo URLs erased)
 q$name[ grepl("ZAPPIA Leone Pietro Antonio", q$url) ] = "ZAPPIA Leone Pietro Antonio"
+q$party[ grepl("ZAPPIA Leone Pietro Antonio", q$url) ] = "L'Ulivo" # missing from scraped data
 q$photo[ grepl("ZAPPIA Leone Pietro Antonio", q$url) ] = NA
 q$photo_url[ grepl("ZAPPIA Leone Pietro Antonio", q$url) ] = NA
 
@@ -277,17 +278,24 @@ dep$party[ dep$party == "ITALIA DEI VALORI" ] = "Italia dei Valori"
 dep$party[ dep$party == "I Democratici - L'Ulivo" ] = "I Democratici"
 dep$party[ dep$party == "MISTO (MPA-MOVIMENTO PER L'AUTONOMIA)" ] = "Movimento per l'Autonomia"
 dep$party[ dep$party == "MISTO (MINORANZE LINGUISTICHE)" ] = "linguistic minorities"
-dep$party[ dep$party %in% c("SOCIALISTI E RADICALI-RNP", "MISTO (LA ROSA NEL PUGNO)") ] = "Rosa nel Pugno" # l. 14-15
-dep$party[ dep$party %in% c("MISTO (VERDI-L'UNIONE)", "VERDI") ] = "Verdi" # Federazione dei Verdi
-# includes two small coalitions with Nuovo PSI in both
-
-dep$party[ dep$party %in% c("", "MISTO") | grepl("NUOVO PSI", dep$party) ] = "Misto"
 dep$party[ grepl("LEGA NORD", dep$party, ignore.case = TRUE) ] = "Lega Nord"
+
+# breakup of L'Ulivo and L'Unione parties
+dep$party[ dep$party %in% c("MISTO (VERDI-L'UNIONE)", "VERDI") ] = "Verdi" # Federazione dei Verdi
 dep$party[ grepl("DEMOCRATICI DI SINISTRA", dep$party, ignore.case = TRUE) ] = "Democratici di Sinistra" # l. 13-14
 dep$party[ grepl("SINISTRA DEMOCRATICA", dep$party, ignore.case = TRUE) ] = "Sinistra Democratica" # l. 15
 dep$party[ dep$party %in% c("L'ULIVO", "PARTITO DEMOCRATICO-L'ULIVO") ] = "L'Ulivo" # l. 15 -- ULIV-PD
 dep$party[ grepl("^MARGHERITA", dep$party) ] = "Margherita"
 dep$party[ grepl("POPOLARI|UDEUR|Unione Democratici per l'Europa", dep$party, ignore.case = TRUE) ] =  "Popolari-UDEUR"
+
+# two small coalitions with Nuovo PSI in both (one DCA-NPSI, one mixed)
+dep$party[ dep$party == "MISTO (LIBERAL-DEMOCRATICI, REPUBBLICANI, NUOVO PSI)" ] = 
+  "Liberal-Democratici, Repubblicani e Nuovo PSI" # l. 14, allied to FI
+dep$party[ dep$party == "DCA-DEMOCRAZIA CRISTIANA PER LE AUTONOMIE-NUOVO PSI" ] = 
+  "Democrazia Cristiana per le Autonomie e Nuovo PSI" # l. 15, allied to FI
+
+# Socialists/Radicals coalition
+dep$party[ dep$party %in% c("SOCIALISTI E RADICALI-RNP", "MISTO (LA ROSA NEL PUGNO)") ] = "Rosa nel Pugno" # l. 14-15
 
 # PdCI, coded as PdCI in l. 15, coded as Misto PdCI in l. 14
 dep$party[ grepl("COMUNISTI ITALIANI", dep$party, ignore.case = TRUE) ] = "P. Comunisti Italiani"
@@ -300,7 +308,7 @@ dep$party[ grepl("DEMOCRATICI CRISTIANI", dep$party, ignore.case = TRUE) &
 dep$party[ grepl("DEMOCRATICI CRISTIANI", dep$party, ignore.case = TRUE) ] = "Unione di Centro"
 
 # Residuals: Ecologisti Democratici (n = 4), La Destra (n = 4), Movimento Repubblicani Europei (n = 3)
-dep$party[ grepl("^MISTO|^DCA(.*)PSI$", dep$party, ignore.case = TRUE) ] = "Misto" # residuals -- leave at end
+dep$party[ grepl("^MISTO", dep$party, ignore.case = TRUE) ] = "mixed or minor group" # residuals -- leave at end
 table(dep$party, exclude = NULL)
 
 # print(table(dep$party, gsub("(.*)&leg=(\\d+)&(.*)", "\\2", dep$url), exclude = NULL))

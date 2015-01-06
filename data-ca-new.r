@@ -135,7 +135,7 @@ p$party[ p$party %in% c("SVP", "SUDTIROLER VOLKSPARTEI") ] = "Südtiroler Volksp
 # - Italians abroad:
 #   - South American Union Italian Emigrants (Unione Sudamericana Emigranti Italiani) -- USEI
 #   - Associative Movement Italians Abroad (Movimento Associativo Italiani all'Estero) -- MAIE
-p$party[ grepl("^USEI$|ITALIANI ALL'ESTERO|AUTONOMIE LIBERTE DEMOCRATIE|VALLEE D'AOSTE", p$party) ] = "Misto"
+p$party[ grepl("^USEI$|ALL'ESTERO|AUTONOMIE LIBERTE DEMOCRATIE|VALLEE D'AOSTE", p$party) ] = "mixed or minor group"
 # table(p$party, gsub("(.*)leg=(\\d+)(.*)", "\\2", p$url))
 
 # fix duplicate names before downloading photos

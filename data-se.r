@@ -164,7 +164,7 @@ sen$party[ sen$party == "Unione dei Democraticicristiani e di Centro (UDC)" ] = 
 sen$party[ sen$party == "Per le Autonomie" ] = "Movimento per le Autonomie"
 
 # Residual: Third Pole (n = 3; 2010, disbanded 2012)
-sen$party[ grepl("Per il Terzo Polo", sen$party) ] = "Misto"
+sen$party[ sen$party == "Misto" | grepl("Per il Terzo Polo", sen$party) ] = "mixed or minor group"
 
 # print(table(sen$party, gsub("(.*)leg=(\\d+)(.*)", "\\2", sen$url), exclude = NULL))
 
