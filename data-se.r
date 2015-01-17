@@ -119,10 +119,12 @@ sen = subset(s, grepl("SATTSEN", id)
              & !is.na(name))[, c("id", "name", "sex", "born", "party", "mandate", "photo", "circo") ]
 names(sen)[ which(names(sen) == "id") ] = "url"
 
-# seniority that goes back to legislature 1
+# seniority that goes back to legislature 1 (Senato only, for comparability)
 sen$mandate = sapply(sen$mandate, function(x) {
+  x = unlist(strsplit(x, ";"))
+  x = x[ grepl("sattsen", x) ]
   x = unlist(str_extract_all(x, "&leg=[0-9]+"))
-  paste0(sort(as.numeric(gsub("&leg=", "", x))), collapse = ";")
+  paste0(sort(unique(as.numeric(gsub("&leg=", "", x)))), collapse = ";")
 })
 
 # legislature minus previous mandates, times mandate length
