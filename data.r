@@ -1,3 +1,11 @@
+# http://stackoverflow.com/a/6364905/635806
+
+simpleCap <- function(x) {
+  s = strsplit(x, "\\s")[[1]]
+  paste(toupper(substring(s, 1, 1)), substring(s, 2),
+        sep = "", collapse = " ")
+}
+
 # in Italy, everything is both old and new, and more complex than elsewhere
 
 root = "http://www.senato.it"
@@ -29,6 +37,14 @@ b = subset(b, prima != "/loc/link.asp?tipodoc=CAM.DEP&leg=15&id=50433")
 
 s = rbind(read.csv("data/deputati-old.csv", stringsAsFactors = FALSE),
           read.csv("data/deputati-new.csv", stringsAsFactors = FALSE))
+
+# constituencies
+s$constituency = gsub("\\s", "_", sapply(tolower(s$circo), simpleCap))
+s$constituency[ s$constituency == "Emilia-romagna" ] = "Emilia-Romagna"
+s$constituency[ s$constituency == "Friuli-venezia_Giulia" ] = "Friuli-Venezia_Giulia"
+s$constituency[ s$constituency == "Trentino-alto_Adige" ] = "Trentino-Alto_Adige"
+s$constituency[ s$constituency == "All'estero" ] = "Anagrafe_degli_italiani_residenti_all'estero"
+s$constituency[ s$constituency == "NANA" ] = NA # bug
 
 # assign party abbreviations
 s$partyname = s$party

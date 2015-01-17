@@ -119,6 +119,7 @@ for(jj in c("ca", "se")) {
     n %v% "sex" = as.character(sp[ network.vertex.names(n), "sex" ])
     n %v% "born" = as.numeric(substr(sp[ network.vertex.names(n), "born" ], 1, 4))
     n %v% "party" = as.character(sp[ network.vertex.names(n), "party" ])
+    n %v% "constituency" = as.character(sp[ network.vertex.names(n), "constituency" ])
     n %v% "partyname" = as.character(sp[ network.vertex.names(n), "partyname" ])
     n %v% "lr" = as.numeric(scores[ n %v% "party" ])
     n %v% "photo" = as.character(sp[ network.vertex.names(n), "photo" ])
@@ -172,7 +173,7 @@ for(jj in c("ca", "se")) {
     #
     
     if(gexf)
-      get_gexf(paste0("net_it_", jj, ii), n, meta, mode, colors)
+      get_gexf(paste0("net_it_", jj, ii), n, meta, mode, colors, extra = "constituency")
 
   }
 

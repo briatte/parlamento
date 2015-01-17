@@ -102,6 +102,8 @@ p$circo = gsub("(.*)\\((.*)\\)", "\\2", p$circo)
 p$circo = gsub("\\s\\d", "", p$circo)
 p$circo[ grepl("AOSTA", p$circo) ] = "AOSTA"
 p$circo[ grepl("MARCAZZAN", p$circo) ] = "LOMBARDIA" # Anna Teresa FORMISANO, 16_302085
+p$circo[ grepl("AFRICA|AMERICA|EUROPA", p$circo) ] = "ALL'ESTERO" # abroad
+
 p$circo = toupper(p$circo)
 
 p$mandate = gsub("(.*): (.*)", "\\2", p$mandate)
@@ -182,5 +184,5 @@ p$name = sapply(p$name, function(i) {
 # last name check (della, di, etc.)
 p$name[ grepl("\\s[A-Z]{1,5}\\s", p$name) ]
 
-write.csv(p[, c("url", "name", "sex", "born", "party", "mandate", "photo") ],
+write.csv(p[, c("url", "name", "sex", "born", "party", "mandate", "photo", "circo") ],
           "data/deputati-new.csv", row.names = FALSE)

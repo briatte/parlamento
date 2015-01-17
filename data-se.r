@@ -82,6 +82,8 @@ if(length(k)) {
 s$circo[ s$circo == "ASIA-AFRICA-OCEANIA-ANTARTIDE" ] = "AFRICA, ASIA, OCEANIA E ANTARTIDE"
 s$circo[ s$circo == "EMILIA ROMAGNA" ] = "EMILIA-ROMAGNA"
 s$circo[ s$circo == "VALLE D'AOSTA" ] = "AOSTA"
+s$circo[ s$circo == "VALLE D'AOSTA" ] = "AOSTA"
+s$circo[ grepl("AFRICA|AMERICA|EUROPA", s$circo) ] = "ALL'ESTERO" # abroad
 
 # download photos (run a couple of times to solve network errors)
 
@@ -113,7 +115,8 @@ write.csv(s, sponsors, row.names = FALSE)
 
 # final senator sponsors
 
-sen = subset(s, grepl("SATTSEN", id) & !is.na(name))[, c("id", "name", "sex", "born", "party", "mandate", "photo") ]
+sen = subset(s, grepl("SATTSEN", id) 
+             & !is.na(name))[, c("id", "name", "sex", "born", "party", "mandate", "photo", "circo") ]
 names(sen)[ which(names(sen) == "id") ] = "url"
 
 # seniority that goes back to legislature 1
@@ -174,6 +177,14 @@ sen$party[ sen$party == "Misto" | grepl("Per il Terzo Polo", sen$party) ] = "mix
 # assign party abbreviations
 sen$partyname = sen$party
 sen$party = as.character(parties[ sen$party ])
+
+# constituencies
+sen$constituency = gsub("\\s", "_", sapply(tolower(sen$circo), simpleCap))
+sen$constituency[ sen$constituency == "Emilia-romagna" ] = "Emilia-Romagna"
+sen$constituency[ sen$constituency == "Friuli-venezia_Giulia" ] = "Friuli-Venezia_Giulia"
+sen$constituency[ sen$constituency == "Trentino-alto_Adige" ] = "Trentino-Alto_Adige"
+sen$constituency[ sen$constituency == "All'estero" ] = "Anagrafe_degli_italiani_residenti_all'estero"
+sen$constituency[ sen$constituency == "Senatore_A_Vita" ] = "Senatore_a_vita"
 
 write.csv(sen, "data/senatori.csv", row.names = FALSE)
 

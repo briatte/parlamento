@@ -174,7 +174,7 @@ if(!file.exists(cam)) {
   # final simplifications
   q$circo[ q$circo == "ABRUZZI" ] = "ABRUZZO"
   q$circo[ q$circo == "VALLE D'AOSTA" ] = "AOSTA"
-  # q$circo[ grepl("AFRICA|AMERICA|EUROPA", q$circo) ] = "ALL'ESTERO" # abroad
+  q$circo[ grepl("AFRICA|AMERICA|EUROPA", q$circo) ] = "ALL'ESTERO" # abroad
   
   # pages that failed to scrape
   # two pages from l. 13 are coded completely differently and a few others are empty
@@ -338,5 +338,5 @@ dep$name = sapply(dep$name, function(i) {
 dep$sex[ dep$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=13&id=d00283" ] = "M" # Pasquale GIULIANO
 dep$sex[ dep$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=13&id=d00640" ] = "F" # Grazia SESTINI
 
-write.csv(dep[, c("url", "name", "sex", "born", "party", "mandate", "photo") ],
+write.csv(dep[, c("url", "name", "sex", "born", "party", "mandate", "photo", "circo") ],
           "data/deputati-old.csv", row.names = FALSE)
