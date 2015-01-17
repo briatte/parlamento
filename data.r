@@ -46,6 +46,22 @@ s$constituency[ s$constituency == "Trentino-alto_Adige" ] = "Trentino-Alto_Adige
 s$constituency[ s$constituency == "All'estero" ] = "Anagrafe_degli_italiani_residenti_all'estero"
 s$constituency[ s$constituency == "NANA" ] = NA # bug
 
+# missing values (from Wikipedia Italiano or from webpage below when by-elections)
+# http://documenti.camera.it/_dati/leg14/lavori/bollet/200412/1222/HTML/16/frame.htm
+s$constituency[ s$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=14&id=d300674" ] = "Friuli-Venezia_Giulia"
+s$constituency[ s$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=14&id=d301054" ] = "Lombardia"
+s$constituency[ s$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=14&id=d301055" ] = "Liguria" # by-election
+s$constituency[ s$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=14&id=d301056" ] = "Toscana"
+s$constituency[ s$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=14&id=d301057" ] = "Emilia-Romagna" # by-election
+s$constituency[ s$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=14&id=d301058" ] = "Sicilia"
+s$constituency[ s$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=14&id=d301059" ] = "Puglia"
+s$constituency[ s$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=14&id=d301408" ] = "Calabria"
+s$constituency[ s$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=14&id=d301409" ] = "Lazio"
+s$constituency[ s$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=14&id=d33160" ] = "Toscana"
+s$constituency[ s$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=14&id=d35640" ] = "Lombardia" # during l. 13-14
+s$constituency[ s$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=14&id=d36070" ] = "Lazio"
+s$constituency[ s$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=14&id=d36500" ] = "Piemonte" # Piero FASSINO, ambiguous
+
 # assign party abbreviations
 s$partyname = s$party
 s$party = as.character(parties[ s$party ])
