@@ -69,6 +69,7 @@ Common variables to both MPs and senators:
 - `photo` -- photo URL, shortened to its filename
 - `partyname` -- simplified political party name
 - `party` -- abbreviated political party
+- `constituency` -- constituency, stored as the string to its Wikipedia Italiano entry
 
 # Note
 
