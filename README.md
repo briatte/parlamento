@@ -1,7 +1,8 @@
 This repository contains code to build cosponsorship networks from bills passed in the [lower][ca] and [upper][se] chambers of the Italian Parliament. 
 
-- [interactive demo](http://briatte.org/parlamento/)
-- [static plots](http://briatte.org/parlamento/plots.html)
+- [interactive demo](http://f.briatte.org/parlviz/parlamento/)
+- [static plots](http://f.briatte.org/parlviz/parlamento/plots.html)
+- [more countries](https://github.com/briatte/parlnet)
 
 [ca]: http://www.camera.it/
 [se]: http://www.senato.it/
