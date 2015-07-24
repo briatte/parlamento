@@ -84,8 +84,11 @@ for(jj in c("ca", "se")) {
     edges = merge(edges, aggregate(w ~ j, function(x) sum(1 / x), data = self))
     edges$gsw = edges$nfw / edges$w
     
+    # sanity check
+    stopifnot(edges$gsw <= 1)
+    
     # final edge set: cosponsor, first author, weights
-    edges = edges[, c("i", "j", "raw", "nfw", "gsw") ]
+    edges = select(edges, i, j, raw, nfw, gsw)
     
     cat(nrow(edges), "edges, ")
     
@@ -124,6 +127,11 @@ for(jj in c("ca", "se")) {
     n %v% "lr" = as.numeric(scores[ n %v% "party" ])
     n %v% "photo" = as.character(sp[ network.vertex.names(n), "photo" ])
     n %v% "nyears" = as.numeric(sp[ network.vertex.names(n), "nyears" ]) # pre-computed
+		
+		# unweighted degree
+		n %v% "degree" = degree(n)
+		q = n %v% "degree"
+		q = as.numeric(cut(q, unique(quantile(q)), include.lowest = TRUE))
     
     set.edge.attribute(n, "source", as.character(edges[, 1])) # cosponsor
     set.edge.attribute(n, "target", as.character(edges[, 2])) # first author
@@ -133,18 +141,6 @@ for(jj in c("ca", "se")) {
     set.edge.attribute(n, "gsw", edges$gsw) # Gross-Shalizi weights
 
     #
-    # weighted measures
-    #
-    
-    n = get_modularity(n, weights = "raw")
-    n = get_modularity(n, weights = "nfw")
-    n = get_modularity(n, weights = "gsw")
-    
-    n = get_centrality(n, weights = "raw")
-    n = get_centrality(n, weights = "nfw")
-    n = get_centrality(n, weights = "gsw")
-    
-    #
     # network plot
     #
     
@@ -153,7 +149,7 @@ for(jj in c("ca", "se")) {
       q = n %v% "degree"
       q = as.numeric(cut(q, unique(quantile(q)), include.lowest = TRUE))
       
-      ggnet_save(n, file = paste0("plots/net_it_", jj, ii),
+      save_plot(n, file = paste0("plots/net_it_", jj, ii),
                  i = colors[ sp[ n %e% "source", "party" ] ],
                  j = colors[ sp[ n %e% "target", "party" ] ],
                  q, colors, order)
@@ -173,7 +169,7 @@ for(jj in c("ca", "se")) {
     #
     
     if(gexf)
-      get_gexf(paste0("net_it_", jj, ii), n, meta, mode, colors, extra = "constituency")
+      save_gexf(paste0("net_it_", jj, ii), n, meta, mode, colors, extra = "constituency")
 
   }
 
