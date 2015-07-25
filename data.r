@@ -73,6 +73,10 @@ for(i in 1:nrow(s)) {
   s$nyears[ i ] = 5 * sum(ii < s$nyears[i])
 }
 
+# missing age values
+s$born[ s$name == "Grazia SESTINI" ] = 1958
+s$born[ s$name == "Pasquale GIULIANO" ] = 1942
+
 write.csv(s, "data/deputati.csv", row.names = FALSE)
 
 # check all sponsors are recognized
