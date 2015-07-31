@@ -127,11 +127,11 @@ for(jj in c("ca", "se")) {
     n %v% "lr" = as.numeric(scores[ n %v% "party" ])
     n %v% "photo" = as.character(sp[ network.vertex.names(n), "photo" ])
     n %v% "nyears" = as.numeric(sp[ network.vertex.names(n), "nyears" ]) # pre-computed
-		
-		# unweighted degree
-		n %v% "degree" = degree(n)
-		q = n %v% "degree"
-		q = as.numeric(cut(q, unique(quantile(q)), include.lowest = TRUE))
+    
+    # unweighted degree
+    n %v% "degree" = degree(n)
+    q = n %v% "degree"
+    q = as.numeric(cut(q, unique(quantile(q)), include.lowest = TRUE))
     
     set.edge.attribute(n, "source", as.character(edges[, 1])) # cosponsor
     set.edge.attribute(n, "target", as.character(edges[, 2])) # first author
