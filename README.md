@@ -18,7 +18,7 @@ The order in which the data are collected is as follows:
 * `data-ca-old.r` scrapes MP details for legislatures 13--15 to `sponsors-ca-old.csv`
 * `data-ca-new.r` scrapes MP details for legislatures 16--17 to `sponsors-ca-new.csv`
 
-This workflow covers both chambers simultaneously, but it is very slow and will produce a large amount of network errors, which can yet be solved by running the scripts several times. For the lower chamber, it should be easier to use the XML/RDF data provided by [dati.camera.it/](http://dati.camera.it/), or even to scrape the [storia.camera.it/](http://storia.camera.it/) portal, which is [incredibly extensive](http://storia.camera.it/documenti/progetti-legge) in coverage. For the upper chamber, the open data portal is [dati.senato.it](http://dati.senato.it/).
+This workflow covers both chambers simultaneously, but it is very slow and will produce a large amount of network errors, which can yet be solved by running the scripts several times. For the lower chamber, it should be easier to use the XML/RDF data provided by [dati.camera.it](http://dati.camera.it/), or even to scrape the [storia.camera.it](http://storia.camera.it/) portal, which is [incredibly extensive](http://storia.camera.it/documenti/progetti-legge) in coverage. For the upper chamber, the open data portal is [dati.senato.it](http://dati.senato.it/).
 
 The `build.r` script then assembles the edge lists and plots the networks, with the help of a few routines coded into `functions.r`. Adjust the `plot`, `gexf` and `mode` parameters to skip the plots or to change the node placement algorithm.
 
