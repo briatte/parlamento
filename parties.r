@@ -5,7 +5,7 @@ colors = c(
   "PCI" = "#FB8072",          # light red, Camera only
   "SINDEM" = "#FCCDE5",       # coalition, Camera only, light pink
   "SEL" = "#4DAF4A",          # Greens, green, Camera l. 16-17 only
-  "VERD/PCI" = "#FB8072",     # FdV + PdCI, light red, Senato only
+  "VERD-PCI" = "#FB8072",     # FdV + PdCI, light red, Senato only
   "VERD" = "#4DAF4A",         # Greens, green, Camera l. 13-15 only
   "DEMSIN" = "#B3DE69",       # Senato l. 13-14 only, light green/olive
   "M5S" = "#FFFF33",          # Camera and Senato l. 17     -- yellow
@@ -21,7 +21,6 @@ colors = c(
   "UDEUR" = "#8DD3C7",        # teal, Camera l. 13-15 only
   "SVP" = "#444444",          # dark grey
   "LD-PRI-NPSI" = "#053061", # dark blue, Camera l. 14 only
-  "PERLIT" = "#8DD3C7",       # PI, teal, Senato l. 17 only
   "DCA-NPSI" = "#053061",     # dark blue, Camera l. 15 only
   "UDC-SVP-MPA" = "#E5D8BD",  # very light brown, Senato l. 16 only
   "CCD" = "#80B1D3",          # Senato l. 13                     -- light blue
@@ -32,8 +31,10 @@ colors = c(
   "CDU" = "#053061",          # Senato l. 13                     -- dark blue
   "MPA" = "#E5D8BD",          # Camera l. 15 and Senato l. 15, very light brown
   "GAL" = "#E5D8BD",          # GAL coalition, Senato l. 17 only, very light brown
+  "AL-A" = "#8DD3C7",         # teal
+  "NCD-UDC" = "#BEBADA",      # NCD = teal, UDC = light blue -- light purple
+  "CRI" = "#053061",          # blue -- dark blue
   "FI-PDL" = "#377EB8",       # blue, FI in l. 13-15 and PdL in l. 16-17
-  "NCD" = "#BEBADA",          # NCD, Senato only, light purple
   "FRAT" = "#8DD3C7",         # teal, Camera 16-17 only
   "LN" = "#984EA3",           # purple
   "AN" = "#A65628",           # brown
@@ -43,47 +44,46 @@ colors = c(
 
 # party abbreviations
 
-parties = c(
-  "Alleanza Nazionale" = "AN",         # both chambers
-  "Autonomie, PSI e MAIE" = "AUT-PSI-MAIE",# Senato l. 17
-  "Centro Democratico" = "CD",         # Camera
-  "Centro Cristiano Democratico" = "CCD", # Senato l. 13
-  "Cristiani Democratici Uniti" = "CDU",  # Senato l. 13
-  "Democrazia Cristiana per le Autonomie e Nuovo PSI" = "DCA-NPSI", # Camera l. 15
-  "CCD-CDU: Biancofiore" = "CCD-CDU",     # Senato l. 14
-  "Democratici di Sinistra" = "DEMSIN",   # Senato l. 13-14
-  "Forza Italia" = "FI-PDL",           # both chambers -- grouped with PdL
-  "Fratelli d'Italia" = "FRAT",        # Camera
-  "Grandi Autonomie e Libertà" = "GAL", # Senato
-  "I Democratici" = "ID",               # Camera l. 13
-  "Il Popolo della Libertà" = "FI-PDL", # Camera -- grouped with FI
-  "Italia dei Valori" = "IDV",         # both chambers
-  "Liberal-Democratici, Repubblicani e Nuovo PSI" = "LD-PRI-NPSI", # Camera l. 14    --- COLOR AND SCORE
-  "linguistic minorities" = "MIN",     # Camera l. 14-15
-  "L'Ulivo" = "ULIV",                  # both chambers
-  "Lega Nord" = "LN",                  # both chambers
-  "Movimento 5 Stelle" = "M5S",        # both chambers
-  "Movimento per l'Autonomia" = "MPA", # both chambers
-  "Movimento per le Autonomie" = "MPA",# both chambers
-  "Margherita" = "MARGH",              # Senato
-  "mixed or minor group" = "IND",               # both chambers
-  "Nuovo Centrodestra" = "NCD",        # Senato
-  "P. Comunisti Italiani" = "PCI",     # Camera
-  "P. Rifondazione Comunista" = "PRC", # both chambers
-  "Partito Democratico" = "PD",        # both chambers
-  "Partito Popolare Italiano" = "PPI", # Senato
-  "Popolari-UDEUR" = "UDEUR",          # Camera
-  "Per l'Italia" = "PERLIT",           # Senato
-  "Rinnovamento Italiano" = "RINNOV",  # Senato
-  "Rosa nel Pugno" = "RNP",            # Camera 14-15
-  "Scelta Civica" = "SC",              # both chambers
-  "Sinistra Democratica" = "SINDEM",   # Camera
-  "Sinistra Ecologia Libertà" = "SEL", # Camera
-  "Südtiroler Volkspartei" = "SVP",    # Camera l. 16-17
-  "Unione di Centro" = "UDC",          # both chambers
-  "UDC, SVP e Autonomie" = "UDC-SVP-MPA",# Senato l. 16
-  "Verdi" = "VERD",                    # Camera
-  "Verdi e Communisti" = "VERD/PCI"    # Senato
+groups = c(
+  "PRC" = "P. Rifondazione Comunista", # C14-15, S13, S15
+  "PCI" = "P. Comunisti Italiani",     # C14-15
+  "SINDEM" = "Sinistra Democratica",   # C15, S13
+  "SEL" = "Sinistra Ecologia Libertà", # C17
+  "VERD-PCI" = "Verdi e Communisti",   # S15
+  "VERD" = "Verdi",                    # C14-15, S13-14
+  "DEMSIN" = "Democratici di Sinistra",   # C13-14, S13-14
+  "M5S" = "Movimento 5 Stelle",        # both chambers
+  "PD" = "Partito Democratico",        # C16-17, S16-17
+  "ULIV" = "L'Ulivo",                  # C15, S15
+  "AUT-PSI-MAIE" = "Autonomie, PSI e MAIE", # S17
+  "RNP" = "Rosa nel Pugno",            # C14-15
+  "MARGH" = "Margherita",              # C14, S14 -- part of L'Ulivo
+  "ID" = "I Democratici",               # C13
+  "PPI" = "Partito Popolare Italiano", # Senato
+  "IDV" = "Italia dei Valori",         # C15, C16, S16
+  "RINNOV" = "Rinnovamento Italiano",  # S13
+  "UDEUR" = "Popolari-UDEUR",          # C13-15
+  "SVP" = "Südtiroler Volkspartei",    # C16-17
+  "LD-PRI-NPSI" = "Liberal-Democratici, Repubblicani e Nuovo PSI", # C14 -- allied to FI
+  "DCA-NPSI" = "Democrazia Cristiana per le Autonomie e Nuovo PSI", # C15 -- allied to FI
+  "UDC-SVP-MPA" = "UDC, SVP e Autonomie", # S16
+  "CCD" = "Centro Cristiano Democratico", # S13
+  "CCD-CDU" = "CCD-CDU: Biancofiore",     # C14, S14
+  "SC" = "Scelta Civica",              # both chambers
+  "CD" = "Centro Democratico",              # C17
+  "UDC" = "Unione di Centro",          # C15, C16-17, S15
+  "CDU" = "Cristiani Democratici Uniti",  # Senato l. 13
+  "MPA" = "Movimento per le Autonomie", # C15, S14
+  "GAL" = "Grandi Autonomie e Libertà", # Senato
+  "AL-A" = "Alleanza Liberalpopolare-Autonomie", # S17 -- split FI
+  "NCD-UDC" = "Area Popolare", # S.17 -- mostly NCD-UDC, plus a few SC and M5S
+  "CRI" = "Conservatori, Riformisti italiani",   # S17 -- split from FI/PPI, some GAL
+  "FI-PDL" = "Forza Italia (Il Popolo della Liberta')", # C14-15, C16-17, S13-17
+  "FRAT" = "Fratelli d'Italia",        # C17
+  "LN" = "Lega Nord",                  # C13-15, S13-17
+  "AN" = "Alleanza Nazionale",         # C15-16, S13-S15
+  "MIN" = "linguistic minorities",     # C14-15
+  "IND" = "mixed or minor group"      # both chambers
 )
 
 # ParlGov Left/Right scores
@@ -93,7 +93,7 @@ scores = c(
   "PCI" = 1,        # PdCI
   "SINDEM" = 1.3,
   "SEL" = 1.3,
-  "VERD/PCI" = 1.7, # FdV + PdCI / 2
+  "VERD-PCI" = 1.7, # FdV + PdCI / 2
   "VERD" = 2.4,     # FdV
   "DEMSIN" = 2.6,
   "M5S" = 2.6,
@@ -109,7 +109,6 @@ scores = c(
   "UDEUR" = 5.3,
   "SVP" = 5.4,
   "LD-PRI-NPSI" = 5.5, # Camera l. 14, LD + PRI + NPSI / 3
-  "PERLIT" = 5.6,      # Senato l. 17, SC + UDC + PPI / 3
   "DCA-NPSI" = 5.8,    # Camera l. 15, DCA + NPSI / 2
   "UDC-SVP-MPA" = 5.9, # UDC + SVP + MPA / 3
   "CCD" = 5.9,         # Senato l. 13
@@ -120,8 +119,10 @@ scores = c(
   "CDU" = 6.2,
   "MPA" = 6.2,
   "GAL" = 6.5,
+  "AL-A" = 6.8, # GAL + CRI + FI = (GAL + FI-PDL) / 2
+  "NCD-UDC" = 6.8, # NCD (7.4) + UDC (6.1) / 2
+  "CRI" = 7.1, # split from FI-PDL, scored identically
   "FI-PDL" = 7.1,
-  "NCD" = 7.4,
   "FRAT" = 7.4,
   "LN" = 7.8,
   "AN" = 8.1,
@@ -129,8 +130,5 @@ scores = c(
   "IND" = Inf
 )
 
-stopifnot(parties %in% names(colors))
-stopifnot(parties %in% names(scores))
-
+stopifnot(names(colors) == names(groups))
 stopifnot(names(colors) == names(scores))
-order = names(colors)[ order(scores) ]

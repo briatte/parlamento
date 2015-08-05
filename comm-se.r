@@ -1,18 +1,18 @@
 # add committee co-memberships: Senato
 
 raw = data.frame()
-sponsors = dir("raw", pattern = "sen\\d+_\\d+\\.html$", full.names = TRUE)
+sponsors = list.files("raw/mp-pages", pattern = "^sen-", full.names = TRUE)
 
 # find unique committees
 
-cat("Parsing committees")
-for(i in sponsors) {
+cat("Parsing Senato committees")
+for (i in sponsors) {
   
   h = htmlParse(i)
   n = xpathSApply(h, "//a[contains(@href, '=scom')]", xmlValue)
   l = xpathSApply(h, "//a[contains(@href, '=scom')]/@href")
-  if(length(l))
-    raw = rbind(raw, unique(data.frame(i, n, l, stringsAsFactors = FALSE)))
+  if (length(l))
+    raw = rbind(raw, unique(data.frame(i, n, l)))
   
 }
 
@@ -28,27 +28,27 @@ write.csv(raw[, -1 ] %>%
             unique, "data/committees-se.csv", row.names = FALSE)
 
 # unique committees, using URLs
-comm = data.frame(l = unique(raw$l), stringsAsFactors = FALSE)
+comm = data_frame(l = unique(raw$l))
 
 # add sponsor columns
-for(i in sponsors)
-  comm[, gsub("raw/sen|\\.html", "", i) ] = 0
+for (i in sponsors)
+  comm[, gsub("raw/mp-pages/sen-|\\.html", "", i) ] = 0
 
-raw$i = gsub("raw/sen|\\.html", "", raw$i)
+raw$i = gsub("raw/mp-pages/sen-|\\.html", "", raw$i)
 
-for(i in colnames(comm)[ -1 ])
+for (i in colnames(comm)[ -1 ])
   comm[ , i ] = as.numeric(comm$l %in% raw$l[ raw$i == i ])
 
 # assign co-memberships to networks
-for(i in ls(pattern = "^net_it_se")) {
+for (i in ls(pattern = "^net_it_se")) {
   
   n = get(i)
   cat(i, ":", network.size(n), "nodes")
   
   sp = network.vertex.names(n)
-  names(sp) = n %v% "url"
-  names(sp) = gsub("SATTSEN&amp;leg=", "", names(sp)) # URL to id
-  names(sp) = gsub("&amp;id=", "_", names(sp))
+  names(sp) = urls[ n %v% "url" ]
+  names(sp) = gsub("(.*)SATTSEN&leg=", "", names(sp)) # URL to id
+  names(sp) = gsub("&id=", "-", names(sp))
   stopifnot(names(sp) %in% colnames(comm))
   
   m = comm[ , names(sp) ]
@@ -63,12 +63,10 @@ for(i in ls(pattern = "^net_it_se")) {
   colnames(m) = sp[ colnames(m) ]
   rownames(m) = sp[ rownames(m) ]
   
-  e = data.frame(i = n %e% "source",
-                 j = n %e% "target",
-                 stringsAsFactors = FALSE)
+  e = data_frame(i = n %e% "source", j = n %e% "target")
   e$committee = NA
   
-  for(j in 1:nrow(e))
+  for (j in 1:nrow(e))
     e$committee[ j ] = m[ e$i[ j ], e$j[ j ] ]
   
   cat(" co-memberships:",

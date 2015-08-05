@@ -1,20 +1,20 @@
 # add committee co-memberships: Camera
 
 raw = data.frame()
-sponsors = dir("raw", pattern = "^\\d+_d?\\d+\\.html$", full.names = TRUE)
+sponsors = list.files("raw/mp-pages", pattern = "^dep-", full.names = TRUE)
 regex = "//a[contains(@href, 'organiparlamentarism') or contains(@href, 'organiparlamentariSM') or contains(@href, 'shadow_organo_parlamentare')]"
 
 # find unique committees
 
-cat("Parsing committees")
-for(i in sponsors) {
+cat("Parsing Camera committees")
+for (i in sponsors) {
   
   h = htmlParse(i)
   n = xpathSApply(h, regex, xmlValue)
   l = xpathSApply(h, paste0(regex, "/@href"))
   n = str_clean(n)
-  if(length(l)) # not saving links (vary per legislature)
-    raw = rbind(raw, unique(data.frame(i, n, NA, stringsAsFactors = FALSE)))
+  if (length(l)) # not saving links (vary per legislature)
+    raw = rbind(raw, unique(data_frame(i, n, NA)))
   
 }
 raw = subset(raw, grepl("commi(ssione|tato)|consiglio|giunta|collegio", n, ignore.case = TRUE))
@@ -29,32 +29,31 @@ write.csv(raw[, -1 ] %>%
             unique, "data/committees-ca.csv", row.names = FALSE)
 
 # unique committees, using names
-comm = data.frame(n = unique(raw$n), stringsAsFactors = FALSE)
+comm = data_frame(n = unique(raw$n))
 
 # add sponsor columns
-for(i in sponsors)
-  comm[, gsub("raw/|\\.html", "", i) ] = 0
+for (i in sponsors)
+  comm[, gsub("raw/mp-pages/dep-|\\.html", "", i) ] = 0
 
-raw$i = gsub("raw/|\\.html", "", raw$i)
+raw$i = gsub("raw/mp-pages/dep-|\\.html", "", raw$i)
 
-for(i in colnames(comm)[ -1 ])
+for (i in colnames(comm)[ -1 ])
   comm[ , i ] = as.numeric(comm$n %in% raw$n[ raw$i == i ])
 
 # missing sponsor (Raffaele VALENSISE)
-comm[, "13_d00583" ] = 0
+comm[, "13-d00583" ] = 0
 comm[ comm$n == "V Commissione permanente Bilancio", "13_d00583" ] = 1
 
 # assign co-memberships to networks
-for(i in ls(pattern = "^net_it_ca")) {
+for (i in ls(pattern = "^net_it_ca")) {
   
   n = get(i)
   cat(i, ":", network.size(n), "nodes")
   
   sp = network.vertex.names(n)
-  names(sp) = n %v% "url"
+  names(sp) = urls[ n %v% "url" ]
   names(sp) = paste0(gsub("leg=", "", str_extract(names(sp), "leg=\\d+")), 
-                     "_", gsub("(.*)id=(.*)", "\\2", names(sp))) # URL to id
-  names(sp) = gsub("^15_", "15_d", names(sp)) # special case l. 15
+                     "-", gsub("(.*)id=(.*)", "\\2", names(sp))) # URL to id
   stopifnot(names(sp) %in% colnames(comm))
   
   m = comm[ , names(sp) ]
@@ -69,12 +68,10 @@ for(i in ls(pattern = "^net_it_ca")) {
   colnames(m) = sp[ colnames(m) ]
   rownames(m) = sp[ rownames(m) ]
   
-  e = data.frame(i = n %e% "source",
-                 j = n %e% "target",
-                 stringsAsFactors = FALSE)
+  e = data_frame(i = n %e% "source", j = n %e% "target")
   e$committee = NA
   
-  for(j in 1:nrow(e))
+  for (j in 1:nrow(e))
     e$committee[ j ] = m[ e$i[ j ], e$j[ j ] ]
   
   cat(" co-memberships:",

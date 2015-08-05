@@ -1,188 +1,199 @@
-# parse MPs, legislatures 16-17
+# ==============================================================================
+# PARSE MP PAGES, LEGISLATURES 16-17
+# ==============================================================================
 
-v = unlist(strsplit(b$prima[grepl("CAM\\.DEP", b$prima) & grepl("leg=1(6|7)", b$prima) ], ";"))
-v = c(v, unlist(strsplit(b$cofirm[grepl("CAM\\.DEP", b$cofirm) & grepl("leg=1(6|7)", b$cofirm) ], ";")))
+s = data_frame()
 
-v = data.frame(url = unique(v), stringsAsFactors = FALSE)
+j = list.files("raw/mp-pages", pattern = "dep-1[67]-d?\\d", full.names = TRUE)
+cat("Parsing", length(j), "MPs...\n")
 
-v$file = gsub("/loc/link.asp\\?tipodoc=CAM\\.DEP&leg=", "raw/", v$url)
-v$file = paste0(gsub("&id=", "_", v$file), ".html")
-
-# missing pages
-
-v = subset(v, !grepl("_\\.html", file))
-u = subset(v, !file.exists(file))
-
-# download pages
-
-if(nrow(u)) {
-
-  cat("Adding", nrow(u), "MPs\n")
-
-  for(j in nrow(u):1) {
-
-    cat(sprintf("%4.0f", j), u$url[ j ], u$file[ j ])
-    f = try(download.file(paste0(root, u$url[ j ]), u$file[ j ], quiet = TRUE), silent = TRUE)
-    
-    if("try-error" %in% class(f) | !file.info(u$file[ j ])$size) {
-    
-      cat(": network error")
-      file.remove(u$file[ j ])
-    
-    }
-    cat("\n")
+for (i in rev(j)) {
   
-  }
-
+  # cat(str_pad(which(j == i), 4), i)
+  l = gsub("(.*)dep-(\\d+)-(.*)", "\\2", i) %>% as.integer
+  x = htmlParse(i)
+  
+  name = xpathSApply(x, "//div[@class='nominativo']", xmlValue)
+  party = xpathSApply(x, "//div[@class='datielettoriali']", xmlValue)
+  photo = xpathSApply(x, "//img[contains(@src, 'scheda_big')]/@src")
+  born = xpathSApply(x, "//div[@class='datibiografici']", xmlValue)
+  nyears = xpathSApply(x, "//a[contains(@href, 'http://storia.camera.it/deputato')]/../..", xmlValue)
+  
+  s = rbind(s, data_frame(
+    legislature = l, url = i,
+    name, born, sex = NA, nyears = ifelse(!length(nyears), NA, nyears),
+    party, constituency = NA,
+    photo = ifelse(is.null(photo), NA, photo)
+  ))
+  
+  # cat(":", name, "\n")
+  
 }
 
-p = data.frame()
-diff = c()
+# ============================================================================
+# GET PHOTOS
+# ============================================================================
 
-for(i in rev(v$file)) {
-  
-  # cat(i)
-  h = try(htmlParse(i), silent = TRUE)
-  
-  if(!"try-error" %in% class(h)) {
-    
-    name = str_clean(xpathSApply(h, "//div[@class='nominativo']", xmlValue))
-    party = xpathSApply(h, "//div[@class='datielettoriali']", xmlValue)
+stopifnot(str_count(s$photo, "http") == 1 | is.na(s$photo))
+stopifnot(grepl("^http", s$photo) | is.na(s$photo))
 
-    photo = xpathSApply(h, "//img[contains(@src, 'scheda_big')]/@src")
-    if(!length(photo))
-      photo = NA
+k = which(!is.na(s$photo))
+cat("Getting", length(k), "photos...\n")
+
+for (i in rev(k)) {
+  
+  j = gsub("raw/mp-pages/dep-(\\d+)-d?(\\d+)\\.html", "photos_ca/\\1_\\2.jpg",
+           s$url[ i ])
+  
+  if (!file.exists(j)) {
     
-    born = xpathSApply(h, "//div[@class='datibiografici']", xmlValue)
-        
-    sex = ifelse(grepl("Nat", born), ifelse(grepl("Nata ", born), "F", "M"), NA)
-    born = str_extract(born, "[0-9]{4}")
+    h = try(GET(s$photo[ i ]), silent = TRUE)
     
-    # party_url = xpathSApply(h, "//div[@id='innerContentColumn']//a[contains(@href, 'Gruppo')]/@href")
-    # party = xpathSApply(h, "//div[@id='innerContentColumn']//a[contains(@href, 'Gruppo')]", xmlValue)
+    if (!"try-error" %in% class(h) && status_code(h) == 200)
+      writeBin(content(h, "raw"), j)
     
-    mandate = xpathSApply(h, "//a[contains(@href, 'http://storia.camera.it/deputato')]/../..", xmlValue)
-    if(!length(mandate))
-      mandate = NA
-    else
-      mandate = str_clean(mandate)
+  }
+  
+  if (file.exists(j)) {
     
-    if(length(born)) {
-      
-      p = rbind(p, data.frame(
-        name =  gsub("\\((.*)\\)", "", gsub("(.*) - (.*)", "\\1", name)),
-        party_abbr = gsub("(.*)( - |\\()(.*)(\\)?)", "\\3", name),
-        party = str_clean(gsub("(.*)(Lista di elezione |Simbolo della candidatura)(.*)(Proclamat)(.*)", "\\3", party)),
-        url = v$url[ v$file == i ], mandate,
-        circo = str_clean(gsub("(.*)(Lista di elezione |Simbolo della candidatura)(.*)", "\\1", party)),
-        sex, born, photo, stringsAsFactors = FALSE)) # party, party_url
-      
-      # cat(":", p$name[ nrow(p) ], "\n")
-      
-    } else {
-      
-      # a few pages are written in Frontpage-style HTML code
-      # cat(":", t[ which(t[, 3] == i), 1], "failed (different code)\n")
-      diff = c(diff, i)
-      cat("Problem:", i, " has no details\n")
-      
-    }
+    s$photo[ i ] = j
     
   } else {
     
-    cat("Problem:", i, " failed to scrape\n")
+    cat("Photo", s$photo[ i ], "failed\n")
+    s$photo[ i ] = NA
     
   }
   
 }
 
-cat(length(diff), "MPs failed to scrape\n")
+# ============================================================================
+# FINALIZE VARIABLES
+# ============================================================================
 
-p$circo = gsub("(.*)\\((.*)\\)", "\\2", p$circo)
-p$circo = gsub("\\s\\d", "", p$circo)
-p$circo[ grepl("AOSTA", p$circo) ] = "AOSTA"
-p$circo[ grepl("MARCAZZAN", p$circo) ] = "LOMBARDIA" # Anna Teresa FORMISANO, 16_302085
-p$circo[ grepl("AFRICA|AMERICA|EUROPA", p$circo) ] = "ALL'ESTERO" # abroad
+# names
+s$name = str_clean(s$name)
+s$name = gsub("(.*)\\s-\\s(.*)", "\\1", s$name)
+s$name = gsub("(.*)\\s\\((.*)", "\\1", s$name)
 
-p$circo = toupper(p$circo)
+# reorder first and family names
+s$name = sapply(s$name, function(x) {
+  x = strsplit(x, "\\s") %>% unlist
+  y = grepl("[a-z]", x)
+  paste0(c(x[ y ], x[ !y ]), collapse = " ")
+})
 
-p$mandate = gsub("(.*): (.*)", "\\2", p$mandate)
-p$mandate = gsub("(.*) Già (.*)", "\\1", p$mandate) # remove Senato mandates for two MPs
+# gender
+s$sex = str_extract(s$born, "Nat(o|a)\\s?")
+s$sex[ grepl("Nata", s$sex) ] = "F"
+s$sex[ grepl("Nato", s$sex) ] = "M"
+s$sex[ !s$sex %in% c("F", "M") ] = NA
 
-p$mandate = sapply(p$mandate, function(x) {
+# year of birth
+s$born = str_clean(s$born) %>% str_extract("Nat(o|a).*?\\d{4}")
+s$born = str_extract(s$born, "\\d{4}") %>% as.integer
+
+# constituency
+s$constituency = str_extract(s$party, "\\((.*)\\)")
+s$constituency = gsub("\\(|\\s\\d|\\)", "", s$constituency)
+# table(s$constituency, exclude = NULL)
+# subset(s, is.na(constituency))$url
+
+# previous mandates
+s$nyears = str_clean(s$nyears)
+s$nyears = gsub("(.*): (.*)", "\\2", s$nyears)
+s$nyears = gsub("(.*) Già (.*)", "\\1", s$nyears) # remove Senato mandates for two MPs
+
+# extract previous mandates
+s$nyears = sapply(s$nyears, function(x) {
   x = unlist(strsplit(x, ",\\s?"))
   paste0(sort(rom [ x ]), collapse = ";")
 })
 
-subset(p, grepl("\\(", name))
-nrow(subset(p, name == party_abbr))
-table(p$party_abbr[p$party_abbr != p$name])
-
-table(p$party, gsub("(.*)leg=(\\d+)(.*)", "\\2", p$url))
-
-p$party[ p$party == "PARTITO DEMOCRATICO" ] = "Partito Democratico"
-p$party[ p$party == "SINISTRA ECOLOGIA LIBERTA'" ] = "Sinistra Ecologia Libertà" # l. 16-17 only
-p$party[ p$party == "CENTRO DEMOCRATICO" ] = "Centro Democratico"
-p$party[ p$party == "UNIONE DI CENTRO" ] = "Unione di Centro"
-p$party[ p$party == "DI PIETRO ITALIA DEI VALORI" ] = "Italia dei Valori"
-p$party[ p$party == "IL POPOLO DELLA LIBERTA'" ] = "Il Popolo della Libertà"
-p$party[ p$party == "FRATELLI D'ITALIA" ] = "Fratelli d'Italia"
-p$party[ p$party == "LEGA NORD" ] = "Lega Nord"
-p$party[ p$party == "MOVIMENTO 5 STELLE BEPPEGRILLO.IT" ] = "Movimento 5 Stelle"
-p$party[ p$party == "MOVIMENTO PER L'AUTONOMIA ALLEANZA PER IL SUD" ] = "Movimento per l'Autonomia"
-p$party[ grepl("MONTI PER L'ITALIA", p$party) ] = "Scelta Civica"
-p$party[ p$party %in% c("SVP", "SUDTIROLER VOLKSPARTEI") ] = "Südtiroler Volkspartei"
-# Residuals:
-# - regionalists with less than 3 seats in legislatures 16-17 (ALD, Aosta)
-# - Italians abroad:
-#   - South American Union Italian Emigrants (Unione Sudamericana Emigranti Italiani) -- USEI
-#   - Associative Movement Italians Abroad (Movimento Associativo Italiani all'Estero) -- MAIE
-p$party[ grepl("^USEI$|ALL'ESTERO|AUTONOMIE LIBERTE DEMOCRATIE|VALLEE D'AOSTE", p$party) ] = "mixed or minor group"
-# table(p$party, gsub("(.*)leg=(\\d+)(.*)", "\\2", p$url))
-
-# fix duplicate names before downloading photos
-p$name[ p$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=16&id=38120" ] = "PEPE-1 Mario"
-p$name[ p$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=16&id=300368" ] = "PEPE-2 Mario"
-
-# download photos (run a couple of times to solve network errors)
-
-p$photo_url = p$photo
-for(i in unique(p$photo_url)) {
+# legislature minus previous mandates, times mandate length
+for (i in 1:nrow(s)) {
   
-  j = paste(gsub("(.*)leg=(\\d+)(.*)", "\\2", p$url[ p$photo_url == i ]), p$name[ p$photo_url == i ])
-  j = paste0("photos_ca/", gsub("(_)+", "_", gsub("\\s|'", "_", tolower(j))), ".jpg")
-  j = gsub("_\\.", ".", j)
-
-  if(!file.exists(j))
-    try(download.file(i, j, mode = "wb", quiet = TRUE), silent = TRUE)
-  
-  if(file.info(j)$size)
-    p$photo[ p$photo_url == i ] = j
-  else {
-    p$photo[ p$photo_url == i ] = NA
-    file.remove(j)
-  }
+  j = strsplit(s$nyears[i], ";") %>% unlist %>% as.integer
+  s$nyears[ i ] = 5 * sum(j < s$legislature[i])
   
 }
 
-# fix order and particles in MP names
+# seniority
+s$nyears = as.integer(s$nyears)
 
-p$name = gsub("d'\\s", "D'", p$name)
-p$name = gsub("di\\s", "DI ", p$name)
-p$name = gsub("de\\s", "DE ", p$name)
-p$name = sapply(p$name, function(i) {
-  j = unlist(strsplit(i, " "))
-  k = c()
-  for(jj in j) {
-    if(!grepl("[a-z]", jj))
-      k = c(k, jj)
-  }
-  j = j[ !j %in% k ]
-  return(paste(paste0(j, collapse = " "), paste0(k, collapse = " ")))
-})
+# convert filenames back to generic sponsor URLs
+s$url = gsub("raw/mp-pages/dep-(\\d+)-(\\d+)\\.html",
+             "/loc/link.asp\\?tipodoc=CAM.DEP&leg=\\1&id=\\2\\3", s$url)
 
-# last name check (della, di, etc.)
-p$name[ grepl("\\s[A-Z]{1,5}\\s", p$name) ]
+# merge to sponsor URLs
+stopifnot(s$url %in% sp$url)
+s = left_join(s, sp, by = "url")
 
-write.csv(p[, c("url", "name", "sex", "born", "party", "mandate", "photo", "circo") ],
-          "data/deputati-new.csv", row.names = FALSE)
+# duplicates
+s$name[ s$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=16&id=38120" ] = "Mario PEPE-1"
+s$name[ s$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=16&id=300368" ] = "Mario PEPE-2"
+
+# parties
+s$party = gsub("(.*)(Lista di elezione|Simbolo della candidatura)\\s?(.*?)\\r(.*)", "\\3", s$party)
+
+s$party[ s$party == "PARTITO DEMOCRATICO" ] = "PD" # C16-17
+s$party[ s$party == "SINISTRA ECOLOGIA LIBERTA'" ] = "SEL" # C17
+s$party[ s$party == "CENTRO DEMOCRATICO" ] = "CD" # C17
+s$party[ s$party == "UNIONE DI CENTRO" ] = "UDC" # C16-17
+s$party[ s$party == "DI PIETRO ITALIA DEI VALORI" ] = "IDV" # C16
+s$party[ s$party == "IL POPOLO DELLA LIBERTA'" ] = "FI-PDL" # C16-17
+s$party[ grepl("MONTI PER L'ITALIA", s$party) ] = "SC" # C17
+s$party[ s$party == "FRATELLI D'ITALIA" ] = "FRAT" # C17
+s$party[ s$party == "LEGA NORD" ] = "LN" # C16-17
+s$party[ s$party == "MOVIMENTO 5 STELLE BEPPEGRILLO.IT" ] = "M5S" # C17
+s$party[ s$party == "MOVIMENTO PER L'AUTONOMIA ALLEANZA PER IL SUD" ] = "MPA" # C16
+s$party[ s$party %in% c("SVP", "SUDTIROLER VOLKSPARTEI") ] = "SVP" # C16-17
+# Residuals:
+# - regionalists with less than 3 seats in legislatures 16-17 (ALD, Aosta)
+#   - Autonomie Liberté Democratie
+#   - Aosta
+# - Italians abroad (n < 5 in both legislatures):
+#   - South American Union Italian Emigrants (Unione Sudamericana Emigranti Italiani) -- USEI
+#   - Associative Movement Italians Abroad (Movimento Associativo Italiani all'Estero) -- MAIE
+s$party[ grepl("^USEI$|ALL'ESTERO|AUTONOMIE LIBERTE|VALLEE D'AOSTE", s$party) ] = "IND"
+
+# checks and breakdowns
+table(s$party, exclude = NULL)
+table(s$party, s$legislature, exclude = NULL)
+sort(unique(s$party))[ !sort(unique(s$party)) %in% names(colors) ]
+
+# number of groups per legislature
+tapply(s$party, s$legislature, n_distinct)
+
+# ============================================================================
+# QUALITY CONTROL
+# ============================================================================
+
+# - might be missing: born (int of length 4), constituency (chr),
+#   photo (chr, folder/file.ext)
+# - never missing: sex (chr, F/M), nyears (int), url (chr, URL),
+#   party (chr, mapped to colors)
+
+cat("Missing", sum(is.na(s$born)), "years of birth\n")
+stopifnot(is.integer(s$born) & nchar(s$born) == 4 | is.na(s$born))
+
+cat("Missing", sum(is.na(s$constituency)), "constituencies\n")
+stopifnot(is.character(s$constituency))
+
+cat("Missing", sum(is.na(s$photo)), "photos\n")
+stopifnot(is.character(s$photo) & grepl("^photos(_\\w{2})?/(.*)\\.\\w{3}", s$photo) | is.na(s$photo))
+
+stopifnot(!is.na(s$sex) & s$sex %in% c("F", "M"))
+stopifnot(!is.na(s$nyears) & is.integer(s$nyears))
+stopifnot(!is.na(s$url_chamber) & grepl("^http(s)?://(.*)", s$url_chamber))
+stopifnot(s$party %in% names(colors))
+
+# ============================================================================
+# EXPORT DATASET
+# ============================================================================
+
+s$chamber = "ca"
+
+write.csv(select(s, chamber, legislature, url, url_chamber,
+                 name, sex, born, constituency, party, nyears, photo),
+          sponsors_ca_new, row.names = FALSE)
