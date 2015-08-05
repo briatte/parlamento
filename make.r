@@ -32,7 +32,7 @@ meta = c(
   "ipu-ca" = 2157,
   "ipu-se" = 2158,
   "seats-ca" = 630,
-  "seats-ca" = 322
+  "seats-se" = 322
 )
 
 # build routine
