@@ -1,6 +1,6 @@
 # add committee co-memberships: Camera
 
-raw = data.frame()
+raw = data_frame()
 sponsors = list.files("raw/mp-pages", pattern = "^dep-", full.names = TRUE)
 regex = "//a[contains(@href, 'organiparlamentarism') or contains(@href, 'organiparlamentariSM') or contains(@href, 'shadow_organo_parlamentare')]"
 

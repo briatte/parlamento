@@ -1,6 +1,6 @@
 # add committee co-memberships: Senato
 
-raw = data.frame()
+raw = data_frame()
 sponsors = list.files("raw/mp-pages", pattern = "^sen-", full.names = TRUE)
 
 # find unique committees
