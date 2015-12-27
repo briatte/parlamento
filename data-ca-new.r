@@ -126,8 +126,9 @@ s$url = gsub("raw/mp-pages/dep-(\\d+)-(\\d+)\\.html",
              "/loc/link.asp\\?tipodoc=CAM.DEP&leg=\\1&id=\\2\\3", s$url)
 
 # merge to sponsor URLs
-stopifnot(s$url %in% sp$url)
-s = left_join(s, sp, by = "url")
+stopifnot(sp$url[ grepl("DEP&leg=1(6|7)", sp$url) ] %in% s$url)
+s = left_join(s, sp, by = "url") %>%
+  filter(!is.na(url_chamber))
 
 # duplicates
 s$name[ s$url == "/loc/link.asp?tipodoc=CAM.DEP&leg=16&id=38120" ] = "Mario PEPE-1"

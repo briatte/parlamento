@@ -173,16 +173,26 @@ cat("Loaded", nrow(b), "bills\n")
 # GET CHAMBER-LEVEL SPONSOR URLs (N ~ 4,800)
 # ==============================================================================
 
+# check all sponsors are recognized
+a = c(b$authors, b$cosponsors) %>% na.omit %>% str_split(";") %>% unlist
+a = a[ !grepl("id=$", a) & nchar(a) > 0 ] %>% unique
+
 if (!file.exists(sponsors)) {
   
-  sp = na.omit(c(b$authors, b$cosponsors))
-  sp = unlist(str_split(sp, ";"))
-  sp = unique(sp[ !grepl("id=$", sp) ])
-  write.csv(data_frame(url = sp, url_chamber = NA), sponsors, row.names = FALSE)
+  write.csv(data_frame(url = a, url_chamber = NA), sponsors, row.names = FALSE)
   
 }
 
 sp = read.csv(sponsors, stringsAsFactors = FALSE)
+
+# append any missing sponsor
+a = a[ !a %in% sp$url ]
+if (length(a)) {
+  
+  sp = rbind(sp, data_frame(url = a, url_chamber = NA))
+  cat("Appended", length(a), "missing sponsors\n")
+
+}
 
 u = sp$url[ is.na(sp$url_chamber) ]
 
@@ -255,7 +265,27 @@ s = rbind(
   read.csv(sponsors_ca_new, stringsAsFactors = FALSE)
 )
 
-cat("Loaded", nrow(s), "sponsors\n")
+cat("Loaded", nrow(s), "sponsors, ")
+
+# check all sponsors are recognized (again)
+a = c(b$authors, b$cosponsors) %>% na.omit %>% str_split(";") %>% unlist
+a = a[ !grepl("id=$", a) & nchar(a) > 0 ] %>% unique
+a = a[ !a %in% s$url ]
+
+cat(length(a), "missing (will be removed from bills)\n")
+for (i in 1:nrow(b)) {
+  
+  p = strsplit(b$authors[ i ], ";") %>% unlist %>% na.omit
+  
+  if (any(p %in% a))
+    b$authors[ i ] = paste0(p[ !p %in% a], collapse = ";")
+  
+  c = strsplit(b$cosponsors[ i ], ";") %>% unlist %>% na.omit
+  
+  if (any(c %in% a))
+    b$cosponsors[ i ] = paste0(c[ !c %in% a], collapse = ";")
+  
+}
 
 # ==============================================================================
 # CHECK CONSTITUENCIES
@@ -293,26 +323,6 @@ for (i in na.omit(unique(s$constituency))) {
 # ==============================================================================
 # FINALIZE BILLS
 # ==============================================================================
-
-# check all sponsors are recognized
-a = c(strsplit(b$authors, ";") %>% unlist, strsplit(b$cosponsors, ";") %>% unlist)
-a = na.omit(a) %>% unique
-a = a[ !a %in% s$url ]
-
-# cat("Removing", length(a), "unidentified sponsors...\n")
-for (i in 1:nrow(b)) {
-  
-  p = strsplit(b$authors[ i ], ";") %>% unlist %>% na.omit
-  
-  if (any(p %in% a))
-    b$authors[ i ] = paste0(p[ !p %in% a], collapse = ";")
-
-  c = strsplit(b$cosponsors[ i ], ";") %>% unlist %>% na.omit
-  
-  if (any(c %in% a))
-    b$cosponsors[ i ] = paste0(c[ !c %in% a], collapse = ";")
-
-}
 
 b$authors[ b$authors == "" ] = NA
 b$cosponsors[ b$cosponsors == "" ] = NA

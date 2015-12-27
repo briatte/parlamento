@@ -87,8 +87,9 @@ s$url = gsub("raw/mp-pages/sen-(\\d+)-(\\d+)\\.html",
              "/loc/link.asp\\?tipodoc=SATTSEN&leg=\\1&id=\\2", s$url)
 
 # merge to sponsor URLs
-stopifnot(s$url %in% sp$url)
-s = left_join(s, sp, by = "url")
+stopifnot(sp$url[ grepl("SATTSEN", sp$url) ] %in% s$url)
+s = left_join(s, sp, by = "url") %>%
+  filter(!is.na(url_chamber))
 
 # finalize year of birth
 s$born = str_extract(s$born, "[0-9]{4}") %>% as.integer
@@ -129,7 +130,7 @@ s$party[ s$party == "Rinnovamento Italiano" ] = "RINNOV" # S13
 s$party[ grepl("er le Autonomie", s$party) ] = "MPA" # S14
 s$party[ s$party == "AL-A" ] = "AL-A" # S17
 s$party[ s$party == "M5S" ] = "M5S" # S17
-s$party[ s$party == "CRi" ] = "CRI" # S17
+s$party[ s$party %in% c("CoR", "CRi") ] = "CRI" # S17; coalition now dropped the 'I'
 
 # Christian-Democrats
 s$party[ grepl("^Centro Cristiano Democratico| - CCD$", s$party) ] = "CCD" # S13; score 5.9
@@ -141,7 +142,7 @@ s$party[ s$party == "AP (NCD-UDC)" ] = "NCD-UDC" # S17
 s$party[ s$party == "Insieme con l'Unione Verdi - Comunisti Italiani" ] = "VERD-PCI" # S15
 s$party[ s$party == "CCD-CDU: Biancofiore" ] = "CCD-CDU" # S14
 s$party[ s$party == "UDC, SVP e Autonomie" ] = "UDC-SVP-MPA" # S16
-s$party[ s$party == "GAL (GS, MpA, NPSI, PpI, IdV, VGF, FV)" ] = "GAL" # S17; before: GS LA-nS MpA NPSI PpI
+s$party[ grepl("GAL \\(", s$party) ] = "GAL" # S17; coalition changed names a few times
 s$party[ s$party == "Aut (SVP, UV, PATT, UPT)-PSI-MAIE" ] = "AUT-PSI-MAIE" # S17
 
 # breakup of L'Ulivo factions
