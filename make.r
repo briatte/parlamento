@@ -46,6 +46,9 @@ meta = c(
   "seats-se" = 322
 )
 
+# set the next parameter to TRUE to append new years of legislation to the data
+update = FALSE
+
 # build routine
 
 source("data.r")  # scrape bills and sponsors

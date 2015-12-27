@@ -25,7 +25,7 @@ rom = c("I" = 1, "II" = 2, "III" = 3, "IV" = 4, "V" = 5, "VI" = 6, "VII" = 7,
 # INITIALIZE BILLS DATASET
 # ==============================================================================
 
-if (!file.exists(bills)) {
+if (update | !file.exists(bills)) {
   
   b = data_frame()
   
@@ -80,6 +80,15 @@ if (!file.exists(bills)) {
   #   e.g. http://www.senato.it/leg/13/BGT/Schede/Ddliter/13229.htm or
   #        http://www.senato.it/leg/17/BGT/Schede/Ddliter/39637.htm
   
+  if (update && file.exists(bills)) {
+    
+    u = read.csv(bills, stringsAsFactors = FALSE)
+    b = rbind(u, b[ which(!b$url %in% u$url), ])
+    
+    cat("Appended", nrow(b) - nrow(u), "bills\n")
+    
+  }
+  
   write.csv(b, bills, row.names = FALSE)
   
 }
@@ -96,17 +105,21 @@ u = sample(u[ !grepl("id=(19902|18800|18870|18686)", u) ])
 for (i in rev(u)) {
   
   f = paste0("raw/bill-pages/bill-", gsub("(.*)leg=(\\d+)&id=(\\d+)", "\\2-\\3", i), ".html")
-  h = try(GET(paste0(root, i)), silent = TRUE)
-  
-  if ("try-error" %in% class(h)) {
+  if (!file.exists(f)) {
+
+    h = try(GET(paste0(root, i)), silent = TRUE)
     
-    cat(sprintf("%6.0f", which(u == i)), ": failed\n") 
-    
-  } else {
-    
-    cat(sprintf("%6.0f", which(u == i)), ":", h$url, "\n")
-    b$url_chamber[ b$url == i ] = h$url
-    writeLines(content(h, "text"), f)
+    if ("try-error" %in% class(h)) {
+      
+      cat(sprintf("%6.0f", which(u == i)), ": failed\n") 
+      
+    } else {
+      
+      cat(sprintf("%6.0f", which(u == i)), ":", h$url, "\n")
+      b$url_chamber[ b$url == i ] = h$url
+      writeLines(content(h, "text"), f)
+      
+    }
     
   }
   
