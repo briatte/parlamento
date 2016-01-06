@@ -1,6 +1,6 @@
 bills = "data/bills-ca.csv"
 sponsors = "data/sponsors-ca.csv"
-start = 1 # first legislature to examine
+start = 9 # first legislature to examine
 
 #
 # parse sponsors, using SPARQL to get the full listings of each legislature

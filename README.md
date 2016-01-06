@@ -11,6 +11,8 @@ This repository contains code to build cosponsorship networks from bills passed 
 
 Replicate by running `make.r` in R. The `data.r` script will run two different scripts to download the sponsors from both chambers, followed by the bills (_disegni di legge_) that they have cosponsored in each legislature. The data for the lower chamber are collected via the [SPARQL endpoint](http://dati.camera.it/sparql) of its open data portal.
 
+The `data-ca.r` script has been set to collect bills for legislatures 9-17 of the lower chamber. The `start` parameter found at the top of the script can be decreased to any value down to `1` to collect additional data.
+
 The `build.r` script then assembles the edge lists and plots the networks, with the help of a few routines coded into `functions.r`. Adjust the `plot`, `gexf` and `mode` parameters to skip the plots or to change the node placement algorithm.
 
 # DATA
