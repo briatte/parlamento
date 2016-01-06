@@ -10,7 +10,7 @@ dir.create("data"  , showWarnings = FALSE)
 dir.create("plots" , showWarnings = FALSE)
 
 if (file.exists("photos_ca.zip"))
-  unzip("photos.zip")
+  unzip("photos_ca.zip")
 
 dir.create("photos_ca", showWarnings = FALSE)
 
@@ -19,14 +19,20 @@ if (file.exists("photos_se.zip"))
 
 dir.create("photos_se", showWarnings = FALSE)
 
-if (file.exists("raw.zip"))
-  unzip("raw.zip")
+if (file.exists("raw_ca.zip"))
+  unzip("raw_ca.zip")
 
-dir.create("raw"            , showWarnings = FALSE)
-dir.create("raw/bill-lists" , showWarnings = FALSE)
-dir.create("raw/bill-pages" , showWarnings = FALSE)
-dir.create("raw/mp-lists"   , showWarnings = FALSE)
-dir.create("raw/mp-pages"   , showWarnings = FALSE)
+if (file.exists("raw_se.zip"))
+  unzip("raw_se.zip")
+
+dir.create("raw_ca"          , showWarnings = FALSE)
+dir.create("raw_ca/mp-bills" , showWarnings = FALSE)
+dir.create("raw_ca/mp-lists" , showWarnings = FALSE)
+
+dir.create("raw_se"          , showWarnings = FALSE)
+dir.create("raw_se/mp-bills" , showWarnings = FALSE)
+dir.create("raw_se/mp-lists" , showWarnings = FALSE)
+dir.create("raw_se/mp-pages" , showWarnings = FALSE)
 
 # parameters
 
@@ -45,9 +51,6 @@ meta = c(
   "seats-ca" = 630,
   "seats-se" = 322
 )
-
-# set the next parameter to TRUE to append new years of legislation to the data
-update = FALSE
 
 # build routine
 

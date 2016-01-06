@@ -1,7 +1,7 @@
 #' Wrapper around the write.gexf function
 #' @seealso rgexf package, by George Vega Yon and Jorge Fabrega Lacoa
 save_gexf <- function(n, name, mode, colors) {
-
+  
   require(dplyr)
   require(rgexf)
   require(network)
@@ -33,14 +33,14 @@ save_gexf <- function(n, name, mode, colors) {
   n_xyz = do.call(paste0("gplot.layout.", mode), list(n_xyz, NULL))
   n_xyz = as.matrix(cbind(round(n_xyz, 1), 1))
   colnames(n_xyz) = c("x", "y", "z")
-
+  
   # edges
   e = data_frame(
     source = as.numeric(factor(n %e% "source", levels = levels(factor(n_ids$label)))),
     target = as.numeric(factor(n %e% "target", levels = levels(factor(n_ids$label)))),
     weight = n %e% "raw"
   )
-
+  
   # all weights are positive
   stopifnot(all(e$weight > 0))
   
