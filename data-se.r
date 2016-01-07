@@ -343,7 +343,7 @@ s$party[ s$name == "Giancarlo GALAN" & s$legislature == 16 ] = "FI-PDL"
 # Mixed: includes 'Movimento X', n = 3 in S.17, and 'Italia Lavori in Corso',
 # n = 6 in l. 17, both of which more or less merged (some members are ex-M5S)
 # the only other group at n > 3 is SEL (n = 7, S.17, largest 'Misto' party),
-# and the only other known party within 'Misto; is IDV at n = 1 in l. 15
+# and the only other known party within 'Misto; is IDV at n = 2 in l. 15
 s$party[ grepl("^Misto - Sinistra Ecologia e Libertà", s$party) ] = "SEL"
 s$party[ grepl("^Misto($| -)", s$party) ] = "IND" # includes some minor parties
 
